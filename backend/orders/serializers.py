@@ -24,6 +24,22 @@ class OrderSerializer(serializers.ModelSerializer):
     user_name = serializers.ReadOnlyField(source='user.name')
     user_email = serializers.ReadOnlyField(source='user.email')
     business_name = serializers.ReadOnlyField(source='business.name')
+    invoice_file = serializers.SerializerMethodField()
+    return_proof = serializers.SerializerMethodField()
+
+    def get_invoice_file(self, obj):
+        request = self.context.get('request')
+        if obj.invoice_file:
+            url = obj.invoice_file.url
+            return request.build_absolute_uri(url) if request else f'http://localhost:8000{url}'
+        return None
+
+    def get_return_proof(self, obj):
+        request = self.context.get('request')
+        if obj.return_proof:
+            url = obj.return_proof.url
+            return request.build_absolute_uri(url) if request else f'http://localhost:8000{url}'
+        return None
 
     # Write-only list of items when creating
     order_items = serializers.ListField(write_only=True, required=False, child=serializers.DictField())
@@ -35,6 +51,7 @@ class OrderSerializer(serializers.ModelSerializer):
             'full_name', 'mobile_number', 'address', 'city', 'state', 'pincode',
             'total_amount', 'payment_method', 'status', 'tracking_id', 'created_at',
             'items', 'payment_verification', 'order_items',
+            'return_requested', 'return_reason', 'return_proof', 'invoice_file'
         )
         read_only_fields = ('user', 'total_amount', 'created_at')
 

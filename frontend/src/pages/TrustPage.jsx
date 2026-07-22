@@ -7,6 +7,7 @@ import {
   ChevronDown, ChevronUp, CheckCircle, Send, Star, X, Upload, QrCode,
   ChevronLeft, ChevronRight, Loader2, Copy, Check
 } from 'lucide-react';
+import { DiscountPosters } from '../components/DiscountPosters';
 
 const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : '/api');
 const fadeUp = { hidden: { opacity: 0, y: 40 }, visible: { opacity: 1, y: 0 } };
@@ -130,7 +131,7 @@ function DonationModal({ business, initialAmount, onClose }) {
               <p className="text-slate-600 text-sm">Your donation directly funds scholarships, free courses, and community programs. Every rupee makes a difference.</p>
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-3">Select Amount</label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {PRESET_AMOUNTS.map(a => (
                     <button
                       key={a} type="button"
@@ -209,7 +210,7 @@ function DonationModal({ business, initialAmount, onClose }) {
               </div>
 
               {/* Donor Info */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">Your Name *</label>
                   <input required value={donorName} onChange={e => setDonorName(e.target.value)} className={inputCls} placeholder="Full name" />
@@ -396,9 +397,12 @@ function FAQSection({ faqs }) {
   );
 }
 
-function VolunteerForm() {
-  const [form, setForm] = useState({ name: '', phone: '', email: '', area: '', message: '' });
+function VolunteerForm({ business }) {
+  const [form, setForm] = useState({ name: '', phone: '', email: '', area_of_interest: '', message: '' });
   const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState('');
+
   if (sent) {
     return (
       <div className="bg-green-50 border border-green-100 rounded-3xl p-12 text-center">
@@ -408,8 +412,28 @@ function VolunteerForm() {
       </div>
     );
   }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSending(true);
+    setError('');
+    try {
+      await axios.post(`${API}/volunteer-registrations/`, {
+        business: business.id,
+        ...form
+      });
+      setSent(true);
+    } catch (err) {
+      console.error('Volunteer Registration Error:', err.response?.data || err.message);
+      setError('Something went wrong. Please try again.');
+    } finally {
+      setSending(false);
+    }
+  };
+
   return (
-    <form onSubmit={e => { e.preventDefault(); setSent(true); }} className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm space-y-5">
+    <form onSubmit={handleSubmit} className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm space-y-5">
+      {error && <div className="text-red-500 text-sm font-bold p-3 bg-red-50 rounded-lg">{error}</div>}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div>
           <label className="block text-sm font-semibold text-slate-700 mb-2">Full Name *</label>
@@ -426,7 +450,7 @@ function VolunteerForm() {
       </div>
       <div>
         <label className="block text-sm font-semibold text-slate-700 mb-2">Area of Interest *</label>
-        <select required value={form.area} onChange={e => setForm(p => ({ ...p, area: e.target.value }))} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 outline-none text-slate-800 bg-white">
+        <select required value={form.area_of_interest} onChange={e => setForm(p => ({ ...p, area_of_interest: e.target.value }))} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 outline-none text-slate-800 bg-white">
           <option value="">Select area</option>
           <option>Teaching / Tutoring</option>
           <option>Medical Assistance</option>
@@ -441,8 +465,8 @@ function VolunteerForm() {
         <label className="block text-sm font-semibold text-slate-700 mb-2">Message / Skills</label>
         <textarea rows={3} value={form.message} onChange={e => setForm(p => ({ ...p, message: e.target.value }))} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 outline-none text-slate-800 resize-none" placeholder="Tell us about your skills or availability..." />
       </div>
-      <button type="submit" className="w-full flex items-center justify-center gap-3 bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 rounded-2xl text-lg transition-all shadow-xl shadow-orange-500/30">
-        <Send className="w-5 h-5" /> Register as Volunteer
+      <button type="submit" disabled={sending} className="w-full flex items-center justify-center gap-3 bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 rounded-2xl text-lg transition-all shadow-xl shadow-orange-500/30 disabled:opacity-70">
+        {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />} {sending ? 'Registering...' : 'Register as Volunteer'}
       </button>
     </form>
   );
@@ -465,9 +489,13 @@ export const TrustPage = () => {
   if (loading) return <div className="flex justify-center items-center min-h-screen"><div className="w-14 h-14 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" /></div>;
   if (!business) return <div className="text-center py-40 text-2xl text-slate-400 font-bold">Trust / Organization not found</div>;
 
-  const banners = business.banners && business.banners.length > 0
-    ? business.banners
-    : [{ image: 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=1600&q=80', title: business.name, subtitle: business.description }];
+  const allBanners = business.banners || [];
+  const heroBanners = allBanners.filter(b => b.position !== 'DISCOUNT');
+  const discountPosters = allBanners.filter(b => b.position === 'DISCOUNT');
+
+  const banners = heroBanners.length > 0
+    ? heroBanners
+    : [{ image: '/images/assets/asset_3e42647b.jpg', title: business.name, subtitle: business.description }];
 
   return (
     <div className="pb-20">
@@ -480,9 +508,12 @@ export const TrustPage = () => {
 
       <HeroSlider banners={banners} business={business} onDonate={setDonateAmount} />
 
+      {/* ── Discount Posters ────────────────────────────── */}
+      <DiscountPosters posters={discountPosters} />
+
       {/* Impact Numbers */}
       <div className="bg-orange-500 text-white">
-        <div className="max-w-7xl mx-auto px-6 py-6 grid grid-cols-2 md:grid-cols-4 divide-x divide-orange-400">
+        <div className="max-w-7xl mx-auto px-6 py-6 grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 divide-x divide-orange-400">
           {[
             { label: 'Students Supported', value: '5,000+' },
             { label: 'Programs Running', value: '12+' },
@@ -512,7 +543,7 @@ export const TrustPage = () => {
                 </div>
               )}
             </motion.div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {(business.gallery_data || []).slice(0, 4).map((img, i) => (
                 <div key={i} className={`rounded-3xl overflow-hidden ${i === 0 ? 'col-span-2 aspect-video' : 'aspect-square'}`}>
                   <img src={img.image} alt={img.caption} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
@@ -544,7 +575,7 @@ export const TrustPage = () => {
         {business.gallery_data && business.gallery_data.length > 0 && (
           <section>
             <SectionHeader badge="Gallery" title="Our Impact in Pictures" subtitle="Moments that define our mission" />
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4">
               {business.gallery_data.map((img, i) => (
                 <motion.div key={i} initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }} className={`relative overflow-hidden rounded-2xl group ${i === 0 ? 'col-span-2 row-span-2 aspect-square' : 'aspect-square'}`}>
                   <img src={img.image} alt={img.caption} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
@@ -632,7 +663,7 @@ export const TrustPage = () => {
             <span className="text-orange-500 font-bold text-sm uppercase tracking-widest">Get Involved</span>
             <h2 className="text-4xl font-heading font-extrabold text-slate-900 mt-2 mb-6">Volunteer With Us</h2>
             <p className="text-slate-600 leading-relaxed text-lg mb-8">Join our growing community of volunteers and make a tangible difference in the lives of those who need it most.</p>
-            <VolunteerForm />
+            <VolunteerForm business={business} />
           </div>
           <div className="space-y-6">
             <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm space-y-5">
@@ -650,15 +681,34 @@ export const TrustPage = () => {
                 </a>
               )}
               {business.address && (
-                <div className="flex items-start gap-4">
+                <a href="https://maps.app.goo.gl/HEgtK1bcE79LxDod9?g_st=ac" target="_blank" rel="noopener noreferrer" className="flex items-start gap-4 hover:opacity-80 transition-opacity">
                   <div className="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center shrink-0"><MapPin className="w-5 h-5 text-orange-500" /></div>
                   <div><p className="text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1">Address</p><p className="text-slate-700 text-sm leading-relaxed">{business.address}</p></div>
+                </a>
+              )}
+              {business.address && (
+                <div className="w-full h-64 rounded-2xl overflow-hidden mt-4">
+                  <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3969.465441958973!2d78.03189209008718!3d11.316396284320847!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3babdb5b3efe89a9%3A0x29e16979f8d13b23!2sPraveen%20groups%20of%20Companies!5e1!3m2!1sen!2sin!4v1784122147718!5m2!1sen!2sin" className="w-full h-full border-0" allowFullScreen="" loading="lazy" referrerPolicy="no-referrer-when-downgrade"></iframe>
                 </div>
               )}
               {business.whatsapp_number && (
                 <a href={`https://wa.me/${business.whatsapp_number.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-2xl transition-all">
                   <MessageCircle className="w-5 h-5" /> Chat on WhatsApp
                 </a>
+              )}
+              {business.social_links && Object.keys(business.social_links).length > 0 && (
+                <div className="flex justify-center gap-4 pt-4 border-t border-slate-100">
+                  {business.social_links.facebook && (
+                    <a href={business.social_links.facebook} target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white hover:scale-110 transition-transform shadow-lg">
+                      <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                    </a>
+                  )}
+                  {business.social_links.instagram && (
+                    <a href={business.social_links.instagram} target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-gradient-to-br from-pink-500 to-purple-600 rounded-2xl flex items-center justify-center text-white hover:scale-110 transition-transform shadow-lg">
+                      <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+                    </a>
+                  )}
+                </div>
               )}
             </div>
           </div>

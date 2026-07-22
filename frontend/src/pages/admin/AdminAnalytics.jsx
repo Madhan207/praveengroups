@@ -60,7 +60,12 @@ const AdminAnalytics = () => {
     Promise.all([
       axios.get(`${API}/orders/?all=true`, authH()),
       axios.get(`${API}/products/`),
-    ]).then(([o, p]) => { setOrders(o.data); setProducts(p.data); }).finally(() => setLoading(false));
+    ]).then(([o, p]) => { 
+      const oData = o.data?.results || o.data;
+      const pData = p.data?.results || p.data;
+      setOrders(Array.isArray(oData) ? oData : []); 
+      setProducts(Array.isArray(pData) ? pData : []); 
+    }).finally(() => setLoading(false));
   }, []);
 
   const dailyData   = useMemo(() => buildDailyOrders(orders), [orders]);

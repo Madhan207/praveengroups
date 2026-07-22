@@ -4,6 +4,7 @@ import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ProductCard } from '../components/ProductCard';
 import { HeroSlider } from '../components/HeroSlider';
+import { DiscountPosters } from '../components/DiscountPosters';
 import { Store, ShoppingBag, Loader2 } from 'lucide-react';
 import { Button } from '../components/Button';
 
@@ -51,8 +52,12 @@ export const BusinessPage = () => {
         return <div className="text-center py-20 text-2xl font-bold text-slate-700">Business not found.</div>;
     }
 
-    const banners = business.banners && business.banners.length > 0 ? business.banners : [{
-        image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=1600&q=80',
+    const allBanners = business.banners || [];
+    const heroBanners = allBanners.filter(b => b.position !== 'DISCOUNT');
+    const discountPosters = allBanners.filter(b => b.position === 'DISCOUNT');
+
+    const banners = heroBanners.length > 0 ? heroBanners : [{
+        image: '/images/assets/asset_e40c5047.jpg',
         title: business.name,
         subtitle: business.description
     }];
@@ -61,6 +66,9 @@ export const BusinessPage = () => {
         <div className="pb-20">
             {/* ─── Hero Slider ─────────────────────────────────────────────────── */}
             <HeroSlider banners={banners} fallbackHeight="min-h-[500px] md:min-h-[650px]" />
+
+            {/* ─── Discount Posters ───────────────────────────────────────────── */}
+            <DiscountPosters posters={discountPosters} />
 
             <div className="max-w-7xl mx-auto px-6 mt-12 space-y-16">
                 {/* Categories */}

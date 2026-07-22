@@ -3,7 +3,8 @@ from django_filters.rest_framework import DjangoFilterBackend
 from .models import Coupon, Notification, GSTSetting, PaymentSetting, Donation
 from .serializers import (
     CouponSerializer, NotificationSerializer, 
-    GSTSettingSerializer, PaymentSettingSerializer, DonationSerializer
+    GSTSettingSerializer, PaymentSettingSerializer, DonationSerializer,
+    ContactMessageSerializer
 )
 
 class CouponViewSet(viewsets.ModelViewSet):
@@ -53,3 +54,17 @@ class DonationViewSet(viewsets.ModelViewSet):
             serializer.save(user=self.request.user)
         else:
             serializer.save()
+
+class ContactMessageViewSet(viewsets.ModelViewSet):
+    from .models import ContactMessage
+    queryset = ContactMessage.objects.all()
+    serializer_class = ContactMessageSerializer
+    
+    def get_permissions(self):
+        if self.action == 'create':
+            return [permissions.AllowAny()]
+        return [permissions.IsAdminUser()]
+    
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ['is_resolved']
+    ordering_fields = ['created_at']

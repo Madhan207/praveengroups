@@ -272,3 +272,117 @@ class Booking(models.Model):
         if self.user and not self.email:
             self.email = self.user.email
         super().save(*args, **kwargs)
+
+
+# ─── Electro Booking (Praveen Electro World) ─────────────────────────────────
+def generate_electro_booking_id():
+    """Generate a short human-readable booking ID like EL-A3F9X2"""
+    return 'EL-' + uuid.uuid4().hex[:6].upper()
+
+
+class ElectroBooking(models.Model):
+    SERVICE_CHOICES = [
+        ('AC Service',          'AC Service / Repair'),
+        ('Fan Installation',    'Fan Installation / Repair'),
+        ('Wiring',              'Wiring / Rewiring'),
+        ('MCB / Switch',        'MCB / Switch / Socket'),
+        ('Inverter / Battery',  'Inverter / Battery Service'),
+        ('Water Heater',        'Water Heater / Geyser'),
+        ('TV / Home Theatre',   'TV / Home Theatre Setup'),
+        ('Washing Machine',     'Washing Machine Service'),
+        ('Refrigerator',        'Refrigerator Service'),
+        ('Motor / Pump',        'Motor / Water Pump'),
+        ('New Connection',      'New Electrical Connection'),
+        ('Other',               'Other Electrical Work'),
+    ]
+
+    TIME_SLOT_CHOICES = [
+        ('Morning (8AM–12PM)',   'Morning (8AM–12PM)'),
+        ('Afternoon (12PM–4PM)', 'Afternoon (12PM–4PM)'),
+        ('Evening (4PM–8PM)',    'Evening (4PM–8PM)'),
+    ]
+
+    STATUS_CHOICES = [
+        ('Pending',             'Pending'),
+        ('Confirmed',           'Confirmed'),
+        ('Technician Assigned', 'Technician Assigned'),
+        ('In Progress',         'In Progress'),
+        ('Completed',           'Completed'),
+        ('Cancelled',           'Cancelled'),
+    ]
+
+    booking_id        = models.CharField(max_length=20, unique=True, default=generate_electro_booking_id, editable=False)
+    user              = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='electro_bookings')
+
+    # Customer info
+    name              = models.CharField(max_length=200)
+    phone             = models.CharField(max_length=30)
+    email             = models.EmailField(blank=True)
+
+    # Electrical service details
+    service_type      = models.CharField(max_length=100, choices=SERVICE_CHOICES)
+    appliance_brand   = models.CharField(max_length=100, blank=True, help_text="e.g., Samsung, LG, Voltas")
+    issue_description = models.TextField(help_text="Describe the problem")
+
+    # Schedule
+    preferred_date    = models.DateField()
+    preferred_time    = models.CharField(max_length=50, choices=TIME_SLOT_CHOICES, default='Morning (8AM–12PM)')
+
+    # Location
+    address           = models.TextField()
+    city              = models.CharField(max_length=100, blank=True)
+    pincode           = models.CharField(max_length=10, blank=True)
+
+    # Admin fields — filled after confirmation
+    status            = models.CharField(max_length=30, choices=STATUS_CHOICES, default='Pending')
+    technician_name   = models.CharField(max_length=200, blank=True)
+    technician_phone  = models.CharField(max_length=30, blank=True)
+    estimated_cost    = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    admin_notes       = models.TextField(blank=True)
+
+    created_at        = models.DateTimeField(auto_now_add=True)
+    updated_at        = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Electro Booking'
+        verbose_name_plural = 'Electro Bookings'
+
+    def __str__(self):
+        return f"ElectroBooking {self.booking_id} — {self.service_type} for {self.name}"
+
+    def save(self, *args, **kwargs):
+        if self.user and not self.name:
+            self.name = self.user.get_full_name() or self.user.email
+        if self.user and not self.email:
+            self.email = self.user.email
+        super().save(*args, **kwargs)
+
+
+# ─── Volunteer Registration ───────────────────────────────────────────────────
+class VolunteerRegistration(models.Model):
+    STATUS_PENDING   = 'Pending'
+    STATUS_APPROVED  = 'Approved'
+    STATUS_REJECTED  = 'Rejected'
+    STATUS_CHOICES = [
+        (STATUS_PENDING,   'Pending'),
+        (STATUS_APPROVED,  'Approved'),
+        (STATUS_REJECTED,  'Rejected'),
+    ]
+
+    business         = models.ForeignKey(Business, related_name='volunteer_registrations', on_delete=models.CASCADE)
+    name             = models.CharField(max_length=200)
+    phone            = models.CharField(max_length=30)
+    email            = models.EmailField(blank=True)
+    area_of_interest = models.CharField(max_length=200)
+    message          = models.TextField(blank=True)
+    status           = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
+    
+    created_at       = models.DateTimeField(auto_now_add=True)
+    updated_at       = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Volunteer Registration: {self.name} for {self.business.name}"

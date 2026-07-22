@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .models import (
     ServiceCategory, Service, ServicePackage, GalleryImage,
     Testimonial, FAQ, AvailabilitySlot, QuoteRequest,
-    ContactInquiry, Booking
+    ContactInquiry, Booking, ElectroBooking, VolunteerRegistration
 )
 
 
@@ -131,3 +131,31 @@ class BookingSerializer(serializers.ModelSerializer):
 
     def get_customer_name(self, obj):
         return obj.name or (obj.user.get_full_name() if obj.user else 'Guest')
+
+
+# ─── ElectroBooking ───────────────────────────────────────────────────────────
+class ElectroBookingSerializer(serializers.ModelSerializer):
+    user_name  = serializers.SerializerMethodField()
+    user_email = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ElectroBooking
+        fields = '__all__'
+        read_only_fields = ['booking_id', 'user', 'status',
+                            'technician_name', 'technician_phone',
+                            'estimated_cost', 'admin_notes']
+
+    def get_user_name(self, obj):
+        return obj.name or (obj.user.get_full_name() if obj.user else 'Guest')
+
+    def get_user_email(self, obj):
+        return obj.email or (obj.user.email if obj.user else '')
+
+# ─── Volunteer Registration ───────────────────────────────────────────────────
+class VolunteerRegistrationSerializer(serializers.ModelSerializer):
+    business_name = serializers.CharField(source='business.name', read_only=True)
+
+    class Meta:
+        model = VolunteerRegistration
+        fields = '__all__'
+        read_only_fields = ['status']

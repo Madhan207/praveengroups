@@ -11,7 +11,6 @@ const navItems = [
   { id: 'bookings', label: 'My Bookings', icon: Calendar },
   { id: 'addresses', label: 'Saved Addresses', icon: MapPin },
   { id: 'payments', label: 'Payment Methods', icon: CreditCard },
-  { id: 'coupons', label: 'Coupons & Rewards', icon: Tag },
   { id: 'notifications', label: 'Notifications', icon: Bell },
   { id: 'reviews', label: 'Reviews & Ratings', icon: Star },
   { id: 'settings', label: 'Settings', icon: Settings },

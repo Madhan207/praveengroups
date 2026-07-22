@@ -1,7 +1,7 @@
 import React from 'react';
 
 export const WhatsAppWidget = () => {
-  const phoneNumber = '918675398848';
+  const phoneNumber = '918438926321';
   const whatsappUrl = `https://wa.me/${phoneNumber}`;
 
   return (

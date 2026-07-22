@@ -111,6 +111,27 @@ class OrderViewSet(viewsets.ModelViewSet):
         order.save()
         return Response({"detail": "Order cancelled successfully.", "status": order.status})
 
+    @action(detail=True, methods=['patch'])
+    def request_return(self, request, pk=None):
+        order = self.get_object()
+        
+        # Only allow returns if delivered (or similar logic, but for now just accept it)
+        if order.status not in ['Delivered', 'Shipped', 'Pending', 'Payment Verified', 'Processing']:
+            return Response(
+                {"detail": "Cannot request return for this order."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        return_reason = request.data.get('return_reason', '')
+        return_proof = request.FILES.get('return_proof')
+        
+        order.return_requested = True
+        order.return_reason = return_reason
+        if return_proof:
+            order.return_proof = return_proof
+        order.save()
+        return Response({"detail": "Return requested successfully."})
+
 class PaymentVerificationViewSet(viewsets.ModelViewSet):
     queryset = PaymentVerification.objects.all()
     serializer_class = PaymentVerificationSerializer

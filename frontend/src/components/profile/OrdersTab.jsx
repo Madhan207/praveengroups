@@ -1,16 +1,53 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Package, Truck, Clock, CheckCircle, Search, Download, RefreshCw, Star, XCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Package, Truck, Clock, CheckCircle, Search, Download, RefreshCw, Star, XCircle, X, Phone } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
-import axios from 'axios';
+import api from '../../utils/api';
+import { useNavigate } from 'react-router-dom';
+
+import { getMediaUrl } from '../../utils/media';
 
 const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : '/api');
-const authHeaders = () => ({ headers: { Authorization: `Bearer ${sessionStorage.getItem('access_token')}` } });
+const toMediaUrl = (path) => {
+  if (!path) return null;
+  return getMediaUrl(path);
+};
 
 export const OrdersTab = ({ orders: initialOrders }) => {
   const [orders, setOrders] = useState(initialOrders);
   const [cancellingId, setCancellingId] = useState(null);
+  const [returnOrderId, setReturnOrderId] = useState(null);
+  const [returnReason, setReturnReason] = useState('');
+  const [returnProof, setReturnProof] = useState(null);
+  const [supportOrderId, setSupportOrderId] = useState(null);
+  const [downloadingId, setDownloadingId] = useState(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const downloadInvoice = async (order) => {
+    const url = toMediaUrl(order.invoice_file);
+    if (!url) return;
+    setDownloadingId(order.id);
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Failed to fetch');
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const ext = url.split('.').pop().split('?')[0] || 'pdf';
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = `Invoice_Order_${order.id}.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+      toast('Invoice downloaded!', 'success');
+    } catch {
+      toast('Failed to download invoice. Please try again.', 'error');
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -38,7 +75,7 @@ export const OrdersTab = ({ orders: initialOrders }) => {
     
     setCancellingId(orderId);
     try {
-      const res = await axios.patch(`${API}/orders/${orderId}/cancel/`, {}, authHeaders());
+      const res = await api.patch(`/orders/${orderId}/cancel/`);
       
       // Update local state
       setOrders(orders.map(o => 
@@ -153,7 +190,7 @@ export const OrdersTab = ({ orders: initialOrders }) => {
                           <RefreshCw className="w-3.5 h-3.5" /> Buy Again
                         </button>
                         <button 
-                          onClick={() => showToast('Review system coming soon!', 'info')}
+                          onClick={() => item.product ? navigate(`/product/${item.product}?tab=reviews`) : showToast('Product page not available', 'error')}
                           className="px-4 py-1.5 border border-slate-200 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-50 transition-colors flex items-center gap-1.5"
                         >
                           <Star className="w-3.5 h-3.5" /> Write Review
@@ -167,20 +204,25 @@ export const OrdersTab = ({ orders: initialOrders }) => {
               {/* Order Actions Sidebar */}
               <div className="w-full lg:w-64 shrink-0 space-y-3 lg:border-l border-slate-100 lg:pl-8">
                 <button 
-                  onClick={() => showToast(`Tracking package for Order #${order.id}...`, 'info')}
+                  onClick={() => setReturnOrderId(order.id)}
+                  disabled={order.return_requested}
+                  className={`w-full py-2.5 bg-white border border-slate-200 text-sm font-bold rounded-xl transition-colors ${order.return_requested ? 'text-slate-400 cursor-not-allowed opacity-60' : 'text-slate-700 hover:bg-slate-50'}`}
+                >
+                  {order.return_requested ? 'Return Requested' : 'Return or Replace Items'}
+                </button>
+                {order.invoice_file && (
+                  <button
+                    onClick={() => downloadInvoice(order)}
+                    disabled={downloadingId === order.id}
+                    className="flex items-center justify-center gap-2 w-full py-2.5 bg-brand-50 border border-brand-200 text-brand-700 text-sm font-bold rounded-xl hover:bg-brand-100 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    <Download className="w-4 h-4" />
+                    {downloadingId === order.id ? 'Downloading...' : 'Download Invoice'}
+                  </button>
+                )}
+                <button 
+                  onClick={() => setSupportOrderId(order.id)}
                   className="w-full py-2.5 bg-brand-600 text-white text-sm font-bold rounded-xl hover:bg-brand-700 transition-colors shadow-md shadow-brand-500/20"
-                >
-                  Track Package
-                </button>
-                <button 
-                  onClick={() => showToast('Return request initiated.', 'success')}
-                  className="w-full py-2.5 bg-white border border-slate-200 text-slate-700 text-sm font-bold rounded-xl hover:bg-slate-50 transition-colors"
-                >
-                  Return or Replace Items
-                </button>
-                <button 
-                  onClick={() => showToast('Connecting to support...', 'info')}
-                  className="w-full py-2.5 bg-white border border-slate-200 text-slate-700 text-sm font-bold rounded-xl hover:bg-slate-50 transition-colors"
                 >
                   Get Product Support
                 </button>
@@ -200,6 +242,113 @@ export const OrdersTab = ({ orders: initialOrders }) => {
           </div>
         </motion.div>
       ))}
+
+      {/* Return / Replace Modal */}
+      <AnimatePresence>
+        {returnOrderId && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-bold font-heading text-slate-900">Return or Replace</h3>
+                <button onClick={() => setReturnOrderId(null)} className="p-2 hover:bg-slate-100 rounded-full text-slate-500 transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <p className="text-slate-600 text-sm mb-4">
+                Please let us know the reason for returning or replacing Order #{returnOrderId}.
+              </p>
+              <textarea 
+                value={returnReason}
+                onChange={(e) => setReturnReason(e.target.value)}
+                className="w-full border border-slate-200 rounded-xl p-3 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none text-sm min-h-[100px] mb-4"
+                placeholder="e.g. Item was damaged, changed my mind..."
+              ></textarea>
+              <div className="mb-6">
+                <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">Photo Proof (Optional)</label>
+                <input 
+                  type="file" 
+                  accept="image/*"
+                  onChange={(e) => setReturnProof(e.target.files?.[0] || null)}
+                  className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 cursor-pointer border border-slate-200 rounded-xl p-1"
+                />
+              </div>
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => setReturnOrderId(null)}
+                  className="flex-1 py-2.5 border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={async () => {
+                    if (!returnReason.trim()) return showToast('Please enter a reason', 'error');
+                    try {
+                      showToast('Submitting return request...', 'info');
+                      const formData = new FormData();
+                      formData.append('return_reason', returnReason);
+                      if (returnProof) formData.append('return_proof', returnProof);
+                      
+                      const res = await api.patch(`/orders/${returnOrderId}/request_return/`, formData);
+                      
+                      // Update local state
+                      setOrders(orders.map(o => 
+                        o.id === returnOrderId ? { ...o, return_requested: true, return_reason: returnReason, return_proof: returnProof ? URL.createObjectURL(returnProof) : null } : o
+                      ));
+                      
+                      showToast('Return/Replace request submitted successfully!', 'success');
+                      setReturnOrderId(null);
+                      setReturnReason('');
+                      setReturnProof(null);
+                    } catch (err) {
+                      showToast('Failed to submit request', 'error');
+                    }
+                  }}
+                  className="flex-1 py-2.5 bg-brand-600 text-white font-bold rounded-xl hover:bg-brand-700 transition-colors shadow-md shadow-brand-500/20"
+                >
+                  Submit Request
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Support Modal */}
+      <AnimatePresence>
+        {supportOrderId && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl text-center"
+            >
+              <div className="w-16 h-16 bg-brand-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Phone className="w-8 h-8 text-brand-600" />
+              </div>
+              <h3 className="text-xl font-bold font-heading text-slate-900 mb-2">Get Product Support</h3>
+              <p className="text-slate-600 text-sm mb-6">
+                For immediate assistance with Order #{supportOrderId}, please contact our admin support directly at:
+              </p>
+              <div className="bg-slate-50 py-3 px-4 rounded-xl mb-6">
+                <p className="text-2xl font-bold text-slate-900 tracking-wide">+91 84389 26321</p>
+              </div>
+              <button 
+                onClick={() => setSupportOrderId(null)}
+                className="w-full py-2.5 bg-brand-600 text-white font-bold rounded-xl hover:bg-brand-700 transition-colors shadow-md shadow-brand-500/20"
+              >
+                Close
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 };

@@ -8,13 +8,14 @@ from django_filters.rest_framework import DjangoFilterBackend
 from .models import (
     ServiceCategory, Service, ServicePackage, GalleryImage,
     Testimonial, FAQ, AvailabilitySlot, QuoteRequest,
-    ContactInquiry, Booking
+    ContactInquiry, Booking, ElectroBooking, VolunteerRegistration
 )
 from .serializers import (
     ServiceCategorySerializer, ServiceSerializer, ServicePackageSerializer,
     GalleryImageSerializer, TestimonialSerializer, FAQSerializer,
     AvailabilitySlotSerializer, QuoteRequestSerializer,
-    ContactInquirySerializer, BookingSerializer
+    ContactInquirySerializer, BookingSerializer, ElectroBookingSerializer,
+    VolunteerRegistrationSerializer
 )
 
 
@@ -234,14 +235,14 @@ class BookingViewSet(viewsets.ModelViewSet):
     ordering_fields = ['booking_date', 'created_at']
 
     def get_permissions(self):
-        # Allow anyone to create a booking (guest or logged in)
+        # Only authenticated users can create or view bookings
         if self.action == 'create':
-            return [permissions.AllowAny()]
+            return [permissions.IsAuthenticated()]
         return [permissions.IsAuthenticated()]
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_authenticated and getattr(user, 'is_staff', False):
+        if user.is_authenticated and (user.is_staff or user.is_superuser or getattr(user, 'role', '') in ['superadmin', 'manager']):
             return Booking.objects.all()
         if user.is_authenticated:
             return Booking.objects.filter(user=user)
@@ -261,8 +262,10 @@ class BookingViewSet(viewsets.ModelViewSet):
         user = self.request.user if self.request.user.is_authenticated else None
         serializer.save(user=user, total_amount=amount)
 
-    @action(detail=True, methods=['post'], url_path='update-status', permission_classes=[permissions.IsAdminUser])
+    @action(detail=True, methods=['post'], url_path='update-status', permission_classes=[permissions.IsAuthenticated])
     def update_status(self, request, pk=None):
+        if not (request.user.is_staff or request.user.is_superuser or getattr(request.user, 'role', '') in ['superadmin', 'manager']):
+            return Response({'error': 'Admin access required'}, status=status.HTTP_403_FORBIDDEN)
         booking = self.get_object()
         new_status = request.data.get('status')
         if new_status not in dict(Booking.STATUS_CHOICES):
@@ -325,3 +328,68 @@ class TrackBookingView(APIView):
             'special_requests': b.special_requests,
             'created_at':    b.created_at.strftime('%d %b %Y, %I:%M %p'),
         })
+
+
+# ─── ElectroBooking ───────────────────────────────────────────────────────────
+class ElectroBookingViewSet(viewsets.ModelViewSet):
+    serializer_class = ElectroBookingSerializer
+    filter_backends  = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['status']
+    search_fields    = ['name', 'phone', 'service_type', 'booking_id']
+    ordering_fields  = ['created_at', 'preferred_date']
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_authenticated and (user.is_staff or user.is_superuser):
+            return ElectroBooking.objects.all()
+        if user.is_authenticated:
+            return ElectroBooking.objects.filter(user=user)
+        return ElectroBooking.objects.none()
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve', 'update', 'partial_update']:
+            # Admins can see/edit all; users can see only their own
+            return [permissions.IsAuthenticated()]
+        if self.action == 'create':
+            return [permissions.IsAuthenticated()]
+        if self.action == 'destroy':
+            return [permissions.IsAdminUser()]
+        return [permissions.IsAuthenticated()]
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    def partial_update(self, request, *args, **kwargs):
+        """Admin can update status, technician info, estimated_cost."""
+        instance = self.get_object()
+        allowed_fields = {'status', 'technician_name', 'technician_phone', 'estimated_cost', 'admin_notes'}
+        data = {k: v for k, v in request.data.items() if k in allowed_fields}
+        serializer = self.get_serializer(instance, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+
+# ─── Volunteer Registration ───────────────────────────────────────────────────
+class VolunteerRegistrationViewSet(viewsets.ModelViewSet):
+    queryset = VolunteerRegistration.objects.all()
+    serializer_class = VolunteerRegistrationSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['business', 'status']
+
+    def get_permissions(self):
+        # Anyone can create a volunteer registration (public form)
+        if self.action == 'create':
+            return [permissions.AllowAny()]
+        return [permissions.IsAdminUser()]
+
+    @action(detail=True, methods=['patch'], url_path='update-status', permission_classes=[permissions.IsAdminUser])
+    def update_status(self, request, pk=None):
+        registration = self.get_object()
+        new_status = request.data.get('status')
+        if new_status not in dict(VolunteerRegistration.STATUS_CHOICES):
+            return Response({'error': 'Invalid status'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        registration.status = new_status
+        registration.save(update_fields=['status'])
+        return Response({'status': new_status})

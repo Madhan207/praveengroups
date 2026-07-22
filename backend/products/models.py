@@ -67,15 +67,22 @@ class Category(models.Model):
 class Product(models.Model):
     category = models.ForeignKey(Category, related_name='products', on_delete=models.CASCADE)
     name = models.CharField(max_length=200)
-    slug = models.SlugField(max_length=200, unique=True)
     brand = models.CharField(max_length=100, blank=True)
     sku = models.CharField(max_length=100, blank=True)
     
     # New Enterprise Fields
     short_description = models.TextField(blank=True)
-    description = models.TextField()
-    features = models.JSONField(default=list, blank=True) # Array of strings
-    specifications = models.JSONField(default=dict, blank=True) # Key-value pairs
+    description = models.TextField(blank=True)
+    
+    # Rich Content (Flipkart style)
+    highlights = models.JSONField(default=list, blank=True) # Array of short bullet points
+    features = models.JSONField(default=list, blank=True) # Used for key features / feature cards
+    specifications = models.JSONField(default=list, blank=True) # [{"group": "Display", "attributes": [{"name": "Size", "value": "6.7"}]}]
+    
+    # SEO & Tracking
+    seo_title = models.CharField(max_length=255, blank=True)
+    seo_description = models.TextField(blank=True)
+    barcode = models.CharField(max_length=100, blank=True)
     
     price = models.DecimalField(max_digits=12, decimal_places=2)
     discount_price = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
@@ -100,7 +107,17 @@ class Product(models.Model):
     
     rating = models.DecimalField(max_digits=3, decimal_places=1, default=0.0)
     reviews_count = models.IntegerField(default=0)
+    
+    # Status Toggles
     is_featured = models.BooleanField(default=False)
+    is_best_seller = models.BooleanField(default=False)
+    is_new_arrival = models.BooleanField(default=False)
+    
+    # Trending Management
+    is_trending = models.BooleanField(default=False)
+    trending_priority = models.IntegerField(default=0)
+    trending_start_date = models.DateTimeField(null=True, blank=True)
+    trending_end_date = models.DateTimeField(null=True, blank=True)
     
     # Service specific fields
     is_service = models.BooleanField(default=False)
@@ -114,11 +131,15 @@ class Product(models.Model):
     def __str__(self):
         return self.name
 
+    class Meta:
+        ordering = ['-id']
+
 class ProductImage(models.Model):
     product = models.ForeignKey(Product, related_name='images', on_delete=models.CASCADE)
     image = models.URLField(max_length=500, blank=True, null=True)
     image_file = models.ImageField(upload_to='products/', null=True, blank=True)
     is_primary = models.BooleanField(default=False)
+    label = models.CharField(max_length=100, blank=True) # e.g., "Front View", "Top View", "Packaging"
 
     def __str__(self):
         return f"{self.product.name} Image"
@@ -133,8 +154,33 @@ class Review(models.Model):
     def __str__(self):
         return f"{self.rating} star by {self.user.name} on {self.product.name}"
 
+    def update_product_rating(self):
+        product = self.product
+        reviews = product.reviews.all()
+        count = reviews.count()
+        if count > 0:
+            total = sum(r.rating for r in reviews)
+            product.rating = round(total / count, 1)
+        else:
+            product.rating = 0.0
+        product.reviews_count = count
+        product.save()
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.update_product_rating()
+
+    def delete(self, *args, **kwargs):
+        super().delete(*args, **kwargs)
+        self.update_product_rating()
+
 class Banner(models.Model):
+    POSITION_CHOICES = [
+        ('HERO', 'Hero Banner'),
+        ('DISCOUNT', 'Discount Poster'),
+    ]
     business = models.ForeignKey(Business, related_name='banners', on_delete=models.CASCADE, null=True, blank=True, help_text="Leave blank for global homepage banners")
+    position = models.CharField(max_length=50, choices=POSITION_CHOICES, default='HERO')
     image = models.URLField(max_length=500, blank=True, null=True)
     image_file = models.ImageField(upload_to='banners/', null=True, blank=True)
     title = models.CharField(max_length=200, blank=True)

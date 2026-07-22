@@ -4,7 +4,8 @@ from .views import (
     ServiceCategoryViewSet, ServiceViewSet, ServicePackageViewSet,
     GalleryImageViewSet, TestimonialViewSet, FAQViewSet,
     AvailabilitySlotViewSet, QuoteRequestViewSet,
-    ContactInquiryViewSet, BookingViewSet, TrackBookingView
+    ContactInquiryViewSet, BookingViewSet, TrackBookingView,
+    ElectroBookingViewSet, VolunteerRegistrationViewSet
 )
 
 router = DefaultRouter()
@@ -18,7 +19,8 @@ router.register(r'availability',       AvailabilitySlotViewSet)
 router.register(r'quote-requests',     QuoteRequestViewSet)
 router.register(r'contact-inquiries',  ContactInquiryViewSet)
 router.register(r'bookings',           BookingViewSet)
-
+router.register(r'electro-bookings',   ElectroBookingViewSet, basename='electro-booking')
+router.register(r'volunteer-registrations', VolunteerRegistrationViewSet)
 urlpatterns = [
     path('', include(router.urls)),
     path('bookings/track/', TrackBookingView.as_view(), name='track-booking'),

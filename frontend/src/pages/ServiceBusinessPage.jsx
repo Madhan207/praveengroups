@@ -8,7 +8,9 @@ import {
   ArrowRight, Send, Loader2, X
 } from 'lucide-react';
 import { BookingModal } from '../components/BookingModal';
+import { ElectroBookingModal } from '../components/ElectroBookingModal';
 import { QuoteModal } from '../components/QuoteModal';
+import { DiscountPosters } from '../components/DiscountPosters';
 
 // ── Inline brand icons ──────────────────────────────────────────────────────
 const InstagramIcon = () => (
@@ -226,10 +228,33 @@ function ServiceCard({ service, index, onBook, onQuote }) {
   );
 }
 
-function PackageCard({ pkg, index, onBook, onQuote }) {
-  const isHighlighted = pkg.badge === 'Best Value' || pkg.badge === 'Popular' || pkg.tier === 'Gold' || pkg.tier === 'Premium';
-  const price = pkg.price ? `₹${parseFloat(pkg.price).toLocaleString('en-IN')}` : pkg.price;
+// Tier-based color config for left sidebar tabs
+const PKG_COLORS = {
+  Essential: { dot: 'bg-emerald-400', activeBg: 'bg-emerald-600', activeShadow: 'shadow-emerald-800/40', activePrice: 'text-emerald-200', activeBar: 'bg-emerald-300/40' },
+  Silver:    { dot: 'bg-slate-300',   activeBg: 'bg-slate-500',   activeShadow: 'shadow-slate-700/40',   activePrice: 'text-slate-200',   activeBar: 'bg-slate-300/40' },
+  Gold:      { dot: 'bg-amber-400',   activeBg: 'bg-amber-500',   activeShadow: 'shadow-amber-700/40',   activePrice: 'text-amber-200',   activeBar: 'bg-amber-300/40' },
+  Platinum:  { dot: 'bg-violet-400',  activeBg: 'bg-violet-600',  activeShadow: 'shadow-violet-800/40',  activePrice: 'text-violet-200',  activeBar: 'bg-violet-300/40' },
+  Diamond:   { dot: 'bg-sky-400',     activeBg: 'bg-sky-600',     activeShadow: 'shadow-sky-800/40',     activePrice: 'text-sky-200',     activeBar: 'bg-sky-300/40' },
+};
+
+function getPkgColor(name) {
+  return Object.entries(PKG_COLORS).find(([k]) => name?.includes(k))?.[1] || PKG_COLORS.Essential;
+}
+
+function PricingSection({ packages, onBook, onQuote }) {
+  const [active, setActive] = useState(0);
+  const pkg = packages[active] || {};
+
+  const formatPrice = (p) => {
+    if (!p) return '—';
+    const s = String(p);
+    if (s.includes('₹') || isNaN(parseFloat(s.replace(/,/g, '')))) return s;
+    return `₹${parseFloat(s.replace(/,/g, '')).toLocaleString('en-IN')}`;
+  };
+
+  const price = formatPrice(pkg.price);
   const features = Array.isArray(pkg.features) ? pkg.features : [];
+  const activeColor = getPkgColor(pkg.name);
 
   return (
     <motion.div
@@ -237,47 +262,93 @@ function PackageCard({ pkg, index, onBook, onQuote }) {
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true }}
-      transition={{ delay: index * 0.1 }}
-      className={`relative rounded-3xl p-8 flex flex-col border transition-all duration-300 ${
-        isHighlighted
-          ? 'bg-gradient-to-br from-brand-600 to-brand-800 text-white border-brand-500 shadow-2xl shadow-brand-600/30 scale-105'
-          : 'bg-white text-slate-900 border-slate-100 hover:shadow-xl'
-      }`}
+      className="flex flex-col lg:flex-row rounded-[2rem] overflow-hidden shadow-2xl shadow-slate-200/60 border border-slate-100"
     >
-      {pkg.badge && (
-        <div className={`absolute -top-4 left-1/2 -translate-x-1/2 px-5 py-1.5 rounded-full text-sm font-bold shadow-lg ${isHighlighted ? 'bg-white text-brand-700' : 'bg-brand-600 text-white'}`}>
-          {pkg.badge}
-        </div>
-      )}
-      <div className="mb-6">
-        <div className={`text-xs font-bold uppercase tracking-widest mb-2 ${isHighlighted ? 'text-brand-200' : 'text-brand-600'}`}>
-          {pkg.tier}
-        </div>
-        <h3 className={`text-2xl font-bold mb-1 ${isHighlighted ? 'text-white' : 'text-slate-900'}`}>{pkg.name}</h3>
-        <div className={`text-4xl font-extrabold font-heading ${isHighlighted ? 'text-white' : 'text-brand-600'}`}>{price}</div>
-        {pkg.duration && <div className={`text-sm mt-1 ${isHighlighted ? 'text-brand-200' : 'text-slate-500'}`}>{pkg.duration}</div>}
+      {/* ── Left: Package Selector ── */}
+      <div className="lg:w-72 shrink-0 bg-slate-900 p-6 flex flex-col gap-2">
+        <p className="text-slate-400 text-xs font-black uppercase tracking-[0.2em] mb-4 px-2">Select Package</p>
+        {packages.map((p, i) => {
+          const col = getPkgColor(p.name);
+          const fp = formatPrice(p.price);
+          const isActive = i === active;
+          return (
+            <button
+              key={i}
+              onClick={() => setActive(i)}
+              className={`w-full text-left px-4 py-4 rounded-2xl transition-all duration-300 flex items-center gap-3 ${
+                isActive
+                  ? `${col.activeBg} text-white shadow-lg ${col.activeShadow}`
+                  : 'hover:bg-slate-800 text-slate-400 hover:text-white'
+              }`}
+            >
+              {/* Colored dot representing the tier */}
+              <span className={`w-3 h-3 rounded-full shrink-0 ${isActive ? 'bg-white' : col.dot}`} />
+              <div className="min-w-0 flex-1">
+                <div className={`font-black text-sm leading-tight truncate ${isActive ? 'text-white' : 'text-slate-300'}`}>{p.name}</div>
+                <div className={`text-xs font-bold mt-0.5 ${isActive ? col.activePrice : 'text-slate-500'}`}>{fp}</div>
+              </div>
+              {isActive && <div className={`ml-auto w-1 h-8 rounded-full shrink-0 ${col.activeBar}`} />}
+            </button>
+          );
+        })}
       </div>
-      <ul className="space-y-3 flex-1 mb-8">
-        {features.map((f, i) => (
-          <li key={i} className="flex items-start gap-3">
-            <CheckCircle className={`w-5 h-5 shrink-0 mt-0.5 ${isHighlighted ? 'text-brand-200' : 'text-green-500'}`} />
-            <span className={`text-sm ${isHighlighted ? 'text-brand-100' : 'text-slate-600'}`}>{f}</span>
-          </li>
-        ))}
-      </ul>
-      <div className="flex flex-col gap-2">
-        <button
-          onClick={() => onBook(null, pkg)}
-          className={`w-full py-3.5 rounded-2xl font-bold text-sm transition-all ${isHighlighted ? 'bg-white text-brand-700 hover:bg-slate-100' : 'bg-brand-600 text-white hover:bg-brand-700 shadow-lg shadow-brand-600/25'}`}
-        >
-          Book This Package
-        </button>
-        <button
-          onClick={() => onQuote(pkg)}
-          className={`w-full py-2.5 rounded-2xl font-bold text-sm transition-all border ${isHighlighted ? 'border-white/30 text-white hover:bg-white/10' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
-        >
-          Get Quote
-        </button>
+
+      {/* ── Right: Package Detail ── */}
+      <div className="flex-1 bg-white p-8 md:p-12 flex flex-col">
+        {/* Colored accent bar at top matching the active tier */}
+        <div className={`h-1.5 w-24 rounded-full mb-8 ${activeColor.dot}`} />
+
+        {/* Header */}
+        <div className="flex flex-wrap items-start justify-between gap-6 mb-8">
+          <div>
+            {pkg.badge && (
+              <span className="inline-block text-[10px] font-black uppercase tracking-widest text-brand-600 bg-brand-50 px-3 py-1 rounded-full mb-3">
+                {pkg.badge}
+              </span>
+            )}
+            <h3 className="text-3xl font-black text-slate-900 leading-tight">{pkg.name}</h3>
+            {pkg.duration && (
+              <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 bg-slate-50 px-4 py-1.5 rounded-full border border-slate-100 mt-3">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                {pkg.duration}
+              </span>
+            )}
+          </div>
+          <div className="text-right">
+            <div className="text-5xl font-black text-slate-900 tracking-tight whitespace-nowrap">{price}</div>
+            <div className="text-sm text-slate-400 font-medium mt-1">Starting price</div>
+          </div>
+        </div>
+
+        <div className="h-px bg-slate-100 mb-8" />
+
+        {/* Features grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1 mb-10">
+          {features.map((f, i) => (
+            <div key={i} className="flex items-center gap-3 p-3.5 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors">
+              <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${activeColor.dot} bg-opacity-20`}>
+                <CheckCircle className="w-3.5 h-3.5 text-slate-600" />
+              </div>
+              <span className="text-sm font-semibold text-slate-700">{f}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Actions */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button
+            onClick={() => onBook(null, pkg)}
+            className="flex-1 py-4 px-8 rounded-2xl font-black text-sm uppercase tracking-wider bg-slate-900 text-white hover:bg-brand-600 transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+          >
+            Book This Package
+          </button>
+          <button
+            onClick={() => onQuote(pkg)}
+            className="flex-1 py-4 px-8 rounded-2xl font-bold text-sm border-2 border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50 transition-all duration-300"
+          >
+            Request a Quote
+          </button>
+        </div>
       </div>
     </motion.div>
   );
@@ -288,7 +359,7 @@ function GalleryGrid({ images }) {
   if (!images || images.length === 0) return null;
   return (
     <>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {images.map((img, i) => (
           <motion.div
             key={img.id || i}
@@ -613,10 +684,14 @@ export const ServiceBusinessPage = () => {
     return <div className="text-center py-40 text-2xl text-slate-400 font-bold">Business not found</div>;
   }
 
+  const allBanners = business.banners || [];
+  const heroBanners = allBanners.filter(b => b.position !== 'DISCOUNT');
+  const discountPosters = allBanners.filter(b => b.position === 'DISCOUNT');
+
   // ── Data resolution: prefer new DB-driven lists, fall back to JSON fields ──
-  const banners = business.banners && business.banners.length > 0
-    ? business.banners
-    : [{ image: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=1600&q=80', title: business.name, subtitle: business.description }];
+  const banners = heroBanners.length > 0
+    ? heroBanners
+    : [{ image: '/images/assets/asset_44048518.jpg', title: business.name, subtitle: business.description }];
 
   const packages = (business.packages_list && business.packages_list.length > 0)
     ? business.packages_list
@@ -655,13 +730,17 @@ export const ServiceBusinessPage = () => {
         businessType={business.type}
       />
 
+      {/* ── Discount Posters ────────────────────────────── */}
+      <DiscountPosters posters={discountPosters} />
+
+
       {/* ── Stats Bar ─────────────────────────────────────── */}
       <div className={`text-white ${
         business.type === 'trust' ? 'bg-amber-600' :
         business.type === 'logistics' ? 'bg-slate-800' :
         'bg-brand-600'
       }`}>
-        <div className="max-w-7xl mx-auto px-6 py-6 grid grid-cols-2 md:grid-cols-4 divide-x divide-white/20">
+        <div className="max-w-7xl mx-auto px-6 py-6 grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 divide-x divide-white/20">
           {(business.stats_data && business.stats_data.length > 0 ? business.stats_data :
             business.type === 'trust' ? [
               { label: 'Years of Service', value: '14+' },
@@ -674,9 +753,9 @@ export const ServiceBusinessPage = () => {
               { label: 'Corporate Clients', value: '500+' },
               { label: 'Deliveries Per Day', value: '500+' },
             ] : [
-              { label: 'Years of Experience', value: '12+' },
-              { label: 'Events Completed', value: '2,000+' },
-              { label: 'Happy Clients', value: '1,800+' },
+              { label: 'Years of Experience', value: '5+' },
+              { label: 'Events Completed', value: '200+' },
+              { label: 'Happy Clients', value: '180+' },
               { label: 'Cities Covered', value: '25+' },
             ]
           ).map((s, i) => (
@@ -706,7 +785,7 @@ export const ServiceBusinessPage = () => {
               )}
             </motion.div>
             <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} transition={{ delay: 0.2 }}>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {gallery.slice(0, 4).map((img, i) => (
                   <div key={img.id || i} className={`rounded-3xl overflow-hidden ${i === 0 ? 'col-span-2 aspect-video' : 'aspect-square'}`}>
                     <img src={img.image} alt={img.caption} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
@@ -735,13 +814,9 @@ export const ServiceBusinessPage = () => {
 
         {/* ── Packages ──────────────────────────────────────── */}
         {packages.length > 0 && (
-          <section className="bg-slate-50 rounded-[2.5rem] p-8 md:p-16">
+          <section>
             <SectionHeader badge="Pricing" title="Service Packages" subtitle="Transparent pricing — choose the package that fits your event perfectly" />
-            <div className={`grid grid-cols-1 md:grid-cols-2 ${packages.length >= 3 ? 'lg:grid-cols-3' : ''} ${packages.length >= 5 ? 'xl:grid-cols-5' : packages.length === 4 ? 'xl:grid-cols-4' : ''} gap-6 items-start`}>
-              {packages.map((pkg, i) => (
-                <PackageCard key={pkg.id || i} pkg={pkg} index={i} onBook={handleBook} onQuote={handleQuote} />
-              ))}
-            </div>
+            <PricingSection packages={packages} onBook={handleBook} onQuote={handleQuote} />
           </section>
         )}
 
@@ -870,7 +945,7 @@ export const ServiceBusinessPage = () => {
                   </a>
                 )}
                 {business.address && (
-                  <div className="flex items-start gap-4">
+                  <a href="https://maps.app.goo.gl/HEgtK1bcE79LxDod9?g_st=ac" target="_blank" rel="noopener noreferrer" className="flex items-start gap-4 hover:opacity-80 transition-opacity">
                     <div className="w-12 h-12 bg-brand-50 rounded-2xl flex items-center justify-center shrink-0">
                       <MapPin className="w-5 h-5 text-brand-600" />
                     </div>
@@ -878,6 +953,11 @@ export const ServiceBusinessPage = () => {
                       <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-1">Address</p>
                       <p className="text-slate-700 text-sm leading-relaxed">{business.address}</p>
                     </div>
+                  </a>
+                )}
+                {business.address && (
+                  <div className="w-full h-64 rounded-2xl overflow-hidden mt-4">
+                    <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3969.465441958973!2d78.03189209008718!3d11.316396284320847!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3babdb5b3efe89a9%3A0x29e16979f8d13b23!2sPraveen%20groups%20of%20Companies!5e1!3m2!1sen!2sin!4v1784122147718!5m2!1sen!2sin" className="w-full h-full border-0" allowFullScreen="" loading="lazy" referrerPolicy="no-referrer-when-downgrade"></iframe>
                   </div>
                 )}
                 {business.whatsapp_number && (
@@ -919,16 +999,7 @@ export const ServiceBusinessPage = () => {
         </section>
         )}
 
-        {/* ── Google Map ────────────────────────────────────── */}
-        {business.google_map_embed && (
-          <section>
-            <SectionHeader badge="Find Us" title="Our Location" />
-            <div
-              className="w-full h-96 rounded-3xl overflow-hidden shadow-lg border border-slate-100"
-              dangerouslySetInnerHTML={{ __html: business.google_map_embed }}
-            />
-          </section>
-        )}
+        
 
         {/* ── Contact Form ──────────────────────────────────── */}
         <section id="contact-section">
@@ -1024,14 +1095,21 @@ export const ServiceBusinessPage = () => {
       </div>
 
       {/* ── Modals ────────────────────────────────────────── */}
-      <BookingModal
-        isOpen={isBookingModalOpen}
-        onClose={() => { setIsBookingModalOpen(false); setPrefilledDate(''); }}
-        service={selectedService}
-        package={selectedPackage}
-        business={business}
-        prefilledDate={prefilledDate}
-      />
+      {(business.slug === 'praveen-electro-world' || business.slug === 'praveen-electronics') ? (
+        <ElectroBookingModal
+          isOpen={isBookingModalOpen}
+          onClose={() => { setIsBookingModalOpen(false); setPrefilledDate(''); }}
+        />
+      ) : (
+        <BookingModal
+          isOpen={isBookingModalOpen}
+          onClose={() => { setIsBookingModalOpen(false); setPrefilledDate(''); }}
+          service={selectedService}
+          package={selectedPackage}
+          business={business}
+          prefilledDate={prefilledDate}
+        />
+      )}
 
       <QuoteModal
         isOpen={isQuoteModalOpen}

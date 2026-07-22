@@ -8,7 +8,6 @@ class ProductImageInline(admin.TabularInline):
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     inlines = [ProductImageInline]
-    prepopulated_fields = {'slug': ('name',)}
     list_display = ('name', 'category', 'price', 'stock', 'is_featured')
     list_filter = ('category', 'is_featured')
 

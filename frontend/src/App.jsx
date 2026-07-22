@@ -1,5 +1,6 @@
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { ScrollToTop } from './components/ScrollToTop';
 
 // User-facing layout & pages
 import { MainLayout } from './layouts/MainLayout';
@@ -14,6 +15,10 @@ import { ProductDetail } from './pages/ProductDetail';
 import { Profile }    from './pages/Profile';
 import { Search }     from './pages/Search';
 import { TrackBooking } from './pages/TrackBooking';
+import { About }      from './pages/About';
+import { Contact }    from './pages/Contact';
+import { FAQ }        from './pages/FAQ';
+import { Shipping }   from './pages/Shipping';
 
 // Admin layout & pages (Lazy loaded)
 const AdminLayout      = lazy(() => import('./layouts/AdminLayout').then(module => ({ default: module.AdminLayout })));
@@ -43,10 +48,15 @@ import { AdminRoute as ProtectedAdmin } from './components/ProtectedRoute';
 function App() {
   return (
     <Router>
+      <ScrollToTop />
       <Routes>
         {/* ── User-facing routes (with Navbar/Footer) ── */}
         <Route path="/" element={<MainLayout />}>
           <Route index element={<Home />} />
+          <Route path="about"          element={<About />} />
+          <Route path="contact"        element={<Contact />} />
+          <Route path="faq"            element={<FAQ />} />
+          <Route path="shipping"       element={<Shipping />} />
           <Route path="category/:slug" element={<CategoryPage />} />
           <Route path="company/:slug"  element={<CompanyRouter />} />
           <Route path="login"          element={<Login />} />
@@ -55,7 +65,7 @@ function App() {
           <Route path="checkout"       element={<Checkout />} />
           <Route path="search"         element={<Search />} />
           <Route path="profile"        element={<Profile />} />
-          <Route path="product/:slug"  element={<ProductDetail />} />
+          <Route path="product/:id"  element={<ProductDetail />} />
           <Route path="track-booking"  element={<TrackBooking />} />
         </Route>
 

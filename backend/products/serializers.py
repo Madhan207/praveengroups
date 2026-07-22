@@ -93,7 +93,7 @@ class ProductImageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProductImage
-        fields = ('id', 'image', 'is_primary')
+        fields = ('id', 'image', 'is_primary', 'label')
 
     def get_image(self, obj):
         if obj.image_file:
@@ -110,6 +110,7 @@ class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
         fields = '__all__'
+        read_only_fields = ['user']
 
 
 class ProductSerializer(serializers.ModelSerializer):

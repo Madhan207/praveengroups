@@ -12,14 +12,15 @@ const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://local
 const authHeaders = () => ({ headers: { Authorization: `Bearer ${sessionStorage.getItem('access_token')}` } });
 
 const STATUS_CONFIG = {
-  Pending:      { color: 'bg-amber-100 text-amber-700 border-amber-200',    dot: 'bg-amber-400',   icon: AlertCircle  },
-  Confirmed:    { color: 'bg-blue-100 text-blue-700 border-blue-200',       dot: 'bg-blue-500',    icon: CheckCircle  },
-  'In Progress':{ color: 'bg-purple-100 text-purple-700 border-purple-200', dot: 'bg-purple-500',  icon: Clock        },
-  Completed:    { color: 'bg-green-100 text-green-700 border-green-200',    dot: 'bg-green-500',   icon: CheckCircle  },
-  Cancelled:    { color: 'bg-red-100 text-red-700 border-red-200',          dot: 'bg-red-500',     icon: XCircle      },
+  Pending:               { color: 'bg-amber-100 text-amber-700 border-amber-200',    dot: 'bg-amber-400',   icon: AlertCircle  },
+  Confirmed:             { color: 'bg-blue-100 text-blue-700 border-blue-200',       dot: 'bg-blue-500',    icon: CheckCircle  },
+  'Technician Assigned': { color: 'bg-teal-100 text-teal-700 border-teal-200',       dot: 'bg-teal-500',    icon: Users        },
+  'In Progress':         { color: 'bg-purple-100 text-purple-700 border-purple-200', dot: 'bg-purple-500',  icon: Clock        },
+  Completed:             { color: 'bg-green-100 text-green-700 border-green-200',    dot: 'bg-green-500',   icon: CheckCircle  },
+  Cancelled:             { color: 'bg-red-100 text-red-700 border-red-200',          dot: 'bg-red-500',     icon: XCircle      },
 };
 
-const STATUSES = ['Pending', 'Confirmed', 'In Progress', 'Completed', 'Cancelled'];
+const STATUSES = ['Pending', 'Confirmed', 'Technician Assigned', 'In Progress', 'Completed', 'Cancelled'];
 
 function StatusBadge({ status }) {
   const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.Pending;
@@ -35,15 +36,45 @@ function BookingRow({ booking, onStatusChange }) {
   const [expanded, setExpanded] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState(booking.status);
+  
+  const [techName, setTechName] = useState(booking.technician_name || '');
+  const [techPhone, setTechPhone] = useState(booking.technician_phone || '');
+  const [estCost, setEstCost] = useState(booking.total_amount || '');
+  const [adminNotes, setAdminNotes] = useState(booking.admin_notes || '');
+  const [updatingDetails, setUpdatingDetails] = useState(false);
+
+  const handleUpdateDetails = async () => {
+    setUpdatingDetails(true);
+    try {
+      await axios.patch(
+        `${API}/electro-bookings/${booking.id}/`,
+        { technician_name: techName, technician_phone: techPhone, estimated_cost: estCost || null, admin_notes: adminNotes },
+        authHeaders()
+      );
+      alert('Details updated successfully');
+    } catch(err) {
+      alert('Failed to update details: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setUpdatingDetails(false);
+    }
+  };
 
   const handleStatusUpdate = async (newStatus) => {
     setUpdating(true);
     try {
-      await axios.post(
-        `${API}/bookings/${booking.id}/update-status/`,
-        { status: newStatus },
-        authHeaders()
-      );
+      if (booking.type === 'electro') {
+        await axios.patch(
+          `${API}/electro-bookings/${booking.id}/`,
+          { status: newStatus },
+          authHeaders()
+        );
+      } else {
+        await axios.post(
+          `${API}/bookings/${booking.id}/update-status/`,
+          { status: newStatus },
+          authHeaders()
+        );
+      }
       setSelectedStatus(newStatus);
       onStatusChange(booking.id, newStatus);
     } catch (err) {
@@ -175,8 +206,41 @@ function BookingRow({ booking, onStatusChange }) {
                   <p className="text-sm text-slate-700 bg-white rounded-xl p-3 border border-slate-100">{booking.special_requests}</p>
                 </div>
               )}
-              <div className="md:col-span-2 lg:col-span-3 text-xs text-slate-400 border-t border-slate-100 pt-3">
-                Booked on {new Date(booking.created_at).toLocaleString('en-IN', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+              {booking.type === 'electro' && booking.issue_description && (
+                <div className="md:col-span-2 lg:col-span-3">
+                  <p className="text-xs text-slate-500 mb-1 font-semibold uppercase tracking-wide">Issue Description</p>
+                  <p className="text-sm text-slate-700 bg-white rounded-xl p-3 border border-slate-100">{booking.issue_description}</p>
+                </div>
+              )}
+              {booking.type === 'electro' && (
+                <div className="md:col-span-2 lg:col-span-3 bg-white p-4 rounded-xl border border-slate-200 mt-2">
+                  <h4 className="text-sm font-bold text-slate-800 mb-3 border-b pb-2">Admin / Technician Details</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-semibold text-slate-600 block mb-1">Technician Name</label>
+                      <input value={techName} onChange={e => setTechName(e.target.value)} className="w-full text-sm border rounded-lg px-3 py-2 outline-none focus:border-brand-500" placeholder="e.g. Ramesh" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-slate-600 block mb-1">Technician Phone</label>
+                      <input value={techPhone} onChange={e => setTechPhone(e.target.value)} className="w-full text-sm border rounded-lg px-3 py-2 outline-none focus:border-brand-500" placeholder="e.g. 9876543210" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-slate-600 block mb-1">Estimated Cost (₹)</label>
+                      <input type="number" value={estCost} onChange={e => setEstCost(e.target.value)} className="w-full text-sm border rounded-lg px-3 py-2 outline-none focus:border-brand-500" placeholder="e.g. 1500" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-slate-600 block mb-1">Admin Notes</label>
+                      <input value={adminNotes} onChange={e => setAdminNotes(e.target.value)} className="w-full text-sm border rounded-lg px-3 py-2 outline-none focus:border-brand-500" placeholder="Internal notes" />
+                    </div>
+                  </div>
+                  <button onClick={handleUpdateDetails} disabled={updatingDetails} className="mt-4 px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-bold hover:bg-brand-700 transition flex items-center gap-2">
+                    {updatingDetails && <Loader2 className="w-4 h-4 animate-spin" />} Update Details
+                  </button>
+                </div>
+              )}
+              <div className="md:col-span-2 lg:col-span-3 text-xs text-slate-400 border-t border-slate-100 pt-3 flex justify-between">
+                <span>Booked on {new Date(booking.created_at).toLocaleString('en-IN', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                {booking.type === 'electro' && <span className="font-semibold text-brand-600">Electrical Booking</span>}
               </div>
             </div>
           </motion.div>
@@ -191,19 +255,43 @@ const AdminBookings = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [businessFilter, setBusinessFilter] = useState('All');
+  const [businesses, setBusinesses] = useState([]);
   const [stats, setStats] = useState({});
 
   const fetchBookings = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API}/bookings/`, authHeaders());
-      const data = res.data?.results || res.data;
-      const arr = Array.isArray(data) ? data : [];
-      setBookings(arr);
+      const [bookRes, elRes] = await Promise.all([
+        axios.get(`${API}/bookings/`, authHeaders()).catch(() => ({ data: [] })),
+        axios.get(`${API}/electro-bookings/`, authHeaders()).catch(() => ({ data: [] }))
+      ]);
+      const bookData = bookRes.data?.results || bookRes.data;
+      const elData = elRes.data?.results || elRes.data;
+      
+      const arr = Array.isArray(bookData) ? bookData.map(b => ({ ...b, type: 'standard' })) : [];
+      const elArr = Array.isArray(elData) ? elData.map(b => ({
+        ...b,
+        type: 'electro',
+        business_name: 'Praveen Electro World',
+        service_name: b.service_type,
+        customer_name: b.name,
+        customer_email: b.email,
+        total_amount: b.estimated_cost || 0,
+        booking_date: b.preferred_date,
+        booking_time: b.preferred_time,
+        location_address: `${b.address || ''}${b.city ? ', ' + b.city : ''}${b.pincode ? ' - ' + b.pincode : ''}`,
+        technician_name: b.technician_name,
+        technician_phone: b.technician_phone,
+        admin_notes: b.admin_notes
+      })) : [];
+
+      const combined = [...arr, ...elArr].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      setBookings(combined);
 
       // Compute quick stats
-      const s = { All: arr.length };
-      STATUSES.forEach(st => { s[st] = arr.filter(b => b.status === st).length; });
+      const s = { All: combined.length };
+      STATUSES.forEach(st => { s[st] = combined.filter(b => b.status === st).length; });
       setStats(s);
     } catch (err) {
       console.error('Failed to fetch bookings', err);
@@ -212,7 +300,15 @@ const AdminBookings = () => {
     }
   };
 
-  useEffect(() => { fetchBookings(); }, []);
+  useEffect(() => {
+    fetchBookings();
+    // Fetch businesses for the filter dropdown (only service businesses)
+    axios.get(`${API}/businesses/`).then(res => {
+      const allBiz = res.data.results || res.data || [];
+      const serviceBiz = allBiz.filter(b => b.type === 'service');
+      setBusinesses(serviceBiz);
+    }).catch(console.error);
+  }, []);
 
   const handleStatusChange = (bookingId, newStatus) => {
     setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: newStatus } : b));
@@ -229,6 +325,9 @@ const AdminBookings = () => {
 
   const filtered = bookings.filter(b => {
     const matchStatus = statusFilter === 'All' || b.status === statusFilter;
+    // For businessFilter, match either by exact string name or we can match by ID if business filter holds ID.
+    // Assuming business filter holds the business name for easier matching or we can use ID. Let's use name.
+    const matchBusiness = businessFilter === 'All' || b.business_name === businessFilter;
     const q = search.toLowerCase();
     const matchSearch = !q || (
       b.booking_id?.toLowerCase().includes(q) ||
@@ -238,7 +337,7 @@ const AdminBookings = () => {
       b.business_name?.toLowerCase().includes(q) ||
       b.event_type?.toLowerCase().includes(q)
     );
-    return matchStatus && matchSearch;
+    return matchStatus && matchBusiness && matchSearch;
   });
 
   const exportCSV = (dataList) => {
@@ -279,6 +378,7 @@ const AdminBookings = () => {
     { label: 'Total', key: 'All', color: 'text-brand-600', bg: 'bg-brand-50' },
     { label: 'Pending', key: 'Pending', color: 'text-amber-600', bg: 'bg-amber-50' },
     { label: 'Confirmed', key: 'Confirmed', color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: 'Assigned', key: 'Technician Assigned', color: 'text-teal-600', bg: 'bg-teal-50' },
     { label: 'In Progress', key: 'In Progress', color: 'text-purple-600', bg: 'bg-purple-50' },
     { label: 'Completed', key: 'Completed', color: 'text-green-600', bg: 'bg-green-50' },
     { label: 'Cancelled', key: 'Cancelled', color: 'text-red-600', bg: 'bg-red-50' },
@@ -317,7 +417,7 @@ const AdminBookings = () => {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
         {STAT_CARDS.map(({ label, key, color, bg }) => (
           <button
             key={key}
@@ -342,6 +442,17 @@ const AdminBookings = () => {
             placeholder="Search by name, phone, booking ID, business..."
             className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:border-brand-400 focus:ring-4 focus:ring-brand-500/10 outline-none text-sm"
           />
+        </div>
+        <div className="relative">
+          <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <select
+            value={businessFilter}
+            onChange={e => setBusinessFilter(e.target.value)}
+            className="pl-9 pr-8 py-3 rounded-xl border border-slate-200 focus:border-brand-400 outline-none bg-white text-sm font-semibold appearance-none"
+          >
+            <option value="All">All Businesses</option>
+            {businesses.map(b => <option key={b.id} value={b.name}>{b.name}</option>)}
+          </select>
         </div>
         <div className="relative">
           <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />

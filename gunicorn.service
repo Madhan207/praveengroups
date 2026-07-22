@@ -1,0 +1,15 @@
+# Gunicorn Systemd Service File for praveengroups.in
+# Save as: /etc/systemd/system/gunicorn.service
+
+[Unit]
+Description=gunicorn daemon for praveengroups.in
+After=network.target
+
+[Service]
+User=root
+Group=www-data
+WorkingDirectory=/var/www/praveenelectro_world/backend
+ExecStart=/var/www/praveenelectro_world/venv/bin/gunicorn --access-logfile - --workers 3 --bind unix:/var/www/praveenelectro_world/backend/gunicorn.sock backend.wsgi:application
+
+[Install]
+WantedBy=multi-user.target

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingCart, Zap, Star, ChevronLeft, ChevronRight, X, CheckCircle, Truck, ShieldCheck, RefreshCw, Heart, ZoomIn, Loader2 } from 'lucide-react';
@@ -22,8 +22,9 @@ const StarRow = ({ rating, count }) => (
 );
 
 export const ProductDetail = () => {
-  const { slug } = useParams();
+  const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { addToCart } = useCart();
   const { user } = useAuth();
 
@@ -37,18 +38,22 @@ export const ProductDetail = () => {
   const [activeTab, setActiveTab] = useState('description');
   const [wishlist, setWishlist] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
+  
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
+  const [submittingReview, setSubmittingReview] = useState(false);
 
   useEffect(() => {
     const fetchProduct = async () => {
       setLoading(true);
       try {
-        const response = await axios.get(`${API}/products/${slug}/`);
+        const response = await axios.get(`${API}/products/${id}/`);
         setProduct(response.data);
         
         // Fetch related products (e.g., from the same category)
         if (response.data.category_slug) {
           const relRes = await axios.get(`${API}/products/?category=${response.data.category_slug}`);
-          setRelatedProducts((relRes.data.results || relRes.data).filter(p => p.slug !== slug).slice(0, 4));
+          setRelatedProducts((relRes.data.results || relRes.data).filter(p => p.id !== Number(id)).slice(0, 4));
         }
       } catch (error) {
         console.error("Failed to fetch product", error);
@@ -59,8 +64,15 @@ export const ProductDetail = () => {
     fetchProduct();
     window.scrollTo(0, 0);
     setSelectedImg(0);
-    setActiveTab('description');
-  }, [slug]);
+    
+    const params = new URLSearchParams(location.search);
+    const tabParam = params.get('tab');
+    if (tabParam === 'reviews') {
+      setActiveTab('reviews');
+    } else {
+      setActiveTab('description');
+    }
+  }, [id, location.search]);
 
   if (loading) {
     return (
@@ -81,12 +93,15 @@ export const ProductDetail = () => {
     );
   }
 
-  const images = (product.images && product.images.length > 0) ? product.images.map(img => img.image) : ['https://placehold.co/800x800/f8fafc/94a3b8?text=No+Image'];
+  const images = (product.images && product.images.length > 0) 
+    ? product.images.map(img => ({ url: img.image, label: img.label })) 
+    : [{ url: 'https://placehold.co/800x800/f8fafc/94a3b8?text=No+Image', label: '' }];
   
   const discount = product.discount_price
     ? Math.round((1 - Number(product.discount_price) / Number(product.price)) * 100) : 0;
 
   const handleAddToCart = () => {
+    if (!user) { navigate('/login'); return; }
     addToCart(product);
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 2500);
@@ -100,6 +115,41 @@ export const ProductDetail = () => {
 
   const prevImg = () => setSelectedImg(i => (i - 1 + images.length) % images.length);
   const nextImg = () => setSelectedImg(i => (i + 1) % images.length);
+
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault();
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    if (!reviewComment.trim()) {
+      alert("Please write a comment.");
+      return;
+    }
+    setSubmittingReview(true);
+    try {
+      const token = sessionStorage.getItem('access_token');
+      await axios.post(`${API}/reviews/`, {
+        product: product.id,
+        rating: reviewRating,
+        comment: reviewComment
+      }, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      // Fetch updated product
+      const response = await axios.get(`${API}/products/${id}/`);
+      setProduct(response.data);
+      setReviewComment('');
+      setReviewRating(5);
+    } catch (error) {
+      console.error("Failed to submit review", error);
+      alert("Failed to submit review. Please try again.");
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
 
   return (
     <div className="space-y-12 mt-16 max-w-7xl mx-auto px-6 pb-20">
@@ -116,14 +166,28 @@ export const ProductDetail = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
 
         {/* ── Image Gallery ── */}
-        <div className="space-y-4">
+        <div className="flex flex-col md:flex-row gap-4 h-auto md:h-[500px]">
+          {/* Vertical Thumbnail Strip (Desktop) */}
+          {images.length > 1 && (
+            <div className="hidden md:flex w-20 shrink-0 flex-col gap-3 overflow-y-auto no-scrollbar pb-1 pr-1">
+              {images.map((img, i) => (
+                <div key={i} className="flex flex-col items-center gap-1">
+                  <button onClick={() => setSelectedImg(i)}
+                    className={`shrink-0 w-16 h-16 rounded-xl overflow-hidden border-2 transition-all ${selectedImg === i ? 'border-brand-500 shadow-md ring-2 ring-brand-100 ring-offset-1' : 'border-slate-200 opacity-60 hover:opacity-100'}`}>
+                    <img src={img.url} alt={img.label || `View ${i+1}`} className="w-full h-full object-cover bg-white" />
+                  </button>
+                  {img.label && <span className="text-[9px] font-bold text-slate-500 text-center leading-tight">{img.label}</span>}
+                </div>
+              ))}
+            </div>
+          )}
           {/* Main Image */}
-          <div className="relative rounded-2xl overflow-hidden bg-slate-50 aspect-square group cursor-zoom-in"
+          <div className="flex-1 relative rounded-2xl overflow-hidden bg-slate-50 group cursor-zoom-in border border-slate-100 aspect-square md:aspect-auto"
             onClick={() => { setLightboxIdx(selectedImg); setLightbox(true); }}>
             <AnimatePresence mode="wait">
               <motion.img
                 key={selectedImg}
-                src={images[selectedImg]}
+                src={images[selectedImg].url}
                 alt={product.name}
                 className="w-full h-full object-contain p-4"
                 initial={{ opacity: 0, scale: 0.98 }}
@@ -149,15 +213,17 @@ export const ProductDetail = () => {
               </>
             )}
           </div>
-
-          {/* Thumbnail Strip */}
+          {/* Horizontal Thumbnail Strip (Mobile) */}
           {images.length > 1 && (
-            <div className="flex gap-3 overflow-x-auto pb-1">
+            <div className="flex md:hidden gap-3 overflow-x-auto pb-1 mt-2">
               {images.map((img, i) => (
-                <button key={i} onClick={() => setSelectedImg(i)}
-                  className={`shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 transition-all ${selectedImg === i ? 'border-brand-500 shadow-md' : 'border-slate-200 opacity-60 hover:opacity-100'}`}>
-                  <img src={img} alt={`View ${i+1}`} className="w-full h-full object-cover" />
-                </button>
+                <div key={i} className="flex flex-col items-center gap-1 shrink-0">
+                  <button onClick={() => setSelectedImg(i)}
+                    className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-all ${selectedImg === i ? 'border-brand-500 shadow-md ring-2 ring-brand-100 ring-offset-1' : 'border-slate-200 opacity-60 hover:opacity-100'}`}>
+                    <img src={img.url} alt={img.label || `View ${i+1}`} className="w-full h-full object-cover bg-white" />
+                  </button>
+                  {img.label && <span className="text-[9px] font-bold text-slate-500 text-center max-w-[64px] truncate">{img.label}</span>}
+                </div>
               ))}
             </div>
           )}
@@ -190,16 +256,13 @@ export const ProductDetail = () => {
             </p>
           )}
 
-          {/* Highlights */}
-          {product.features && product.features.length > 0 && (
-            <div className="space-y-2">
-              <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide">Key Features</h3>
-              <ul className="space-y-1.5">
-                {product.features.map((h, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-slate-600">
-                    <CheckCircle className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
-                    {h}
-                  </li>
+          {/* Highlights (Bullets) */}
+          {product.highlights && product.highlights.length > 0 && (
+            <div className="mt-4 border-y border-slate-100 py-4">
+              <h3 className="font-bold text-slate-800 text-sm uppercase tracking-widest mb-3">Highlights</h3>
+              <ul className="space-y-2 list-disc list-inside text-sm text-slate-600 pl-1">
+                {product.highlights.map((h, i) => (
+                  <li key={i}>{h}</li>
                 ))}
               </ul>
             </div>
@@ -263,25 +326,44 @@ export const ProductDetail = () => {
 
         <div className="p-8">
           {activeTab === 'description' && (
-            <div className="prose prose-slate max-w-none">
-              {product.description?.split('\n\n').map((para, i) => (
-                <p key={i} className="text-slate-600 leading-relaxed mb-4">{para}</p>
-              ))}
+            <div className="space-y-8">
+              {/* Description HTML */}
+              {product.description && (
+                <div className="prose prose-slate max-w-none text-slate-600 text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: product.description }} />
+              )}
+              
+              {/* Key Features Cards */}
+              {product.features && product.features.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-bold text-slate-800 mb-4">Key Features</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {product.features.map((f, i) => (
+                      <div key={i} className="flex gap-3 items-center p-4 bg-slate-50 rounded-xl border border-slate-100">
+                        <CheckCircle className="w-5 h-5 text-green-500 shrink-0" />
+                        <span className="text-sm font-medium text-slate-700">{f}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
-          {activeTab === 'specs' && product.specifications && Object.keys(product.specifications).length > 0 && (
-            <div className="overflow-hidden rounded-2xl border border-slate-100">
-              <table className="w-full text-sm">
-                <tbody className="divide-y divide-slate-50">
-                  {Object.entries(product.specifications).map(([key, val], i) => (
-                    <tr key={key} className={i % 2 === 0 ? 'bg-slate-50/50' : 'bg-white'}>
-                      <td className="px-6 py-3.5 font-semibold text-slate-700 w-1/3">{key}</td>
-                      <td className="px-6 py-3.5 text-slate-600">{val}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          {activeTab === 'specs' && product.specifications && Array.isArray(product.specifications) && product.specifications.length > 0 && (
+            <div className="border border-slate-200 rounded-2xl overflow-hidden">
+              {product.specifications.map((group, gIdx) => (
+                <div key={gIdx} className="border-b border-slate-200 last:border-0">
+                  <div className="bg-slate-50 px-6 py-3 font-semibold text-slate-800 text-sm border-b border-slate-100 uppercase tracking-widest">{group.group}</div>
+                  <div className="divide-y divide-slate-100">
+                    {group.attributes.map((attr, aIdx) => (
+                      <div key={aIdx} className="flex flex-col sm:flex-row px-6 py-3 text-sm hover:bg-slate-50/50 transition-colors">
+                        <div className="w-full sm:w-1/3 text-slate-500 font-medium mb-1 sm:mb-0">{attr.name}</div>
+                        <div className="w-full sm:w-2/3 text-slate-900">{attr.value}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 
@@ -295,6 +377,46 @@ export const ProductDetail = () => {
                   <div className="text-slate-500 text-sm mt-1">{product.reviews_count?.toLocaleString('en-IN')} ratings</div>
                 </div>
               </div>
+              
+              {/* Write Review Form */}
+              <div className="bg-white rounded-2xl p-6 border border-slate-200">
+                <h3 className="text-lg font-bold text-slate-800 mb-4">Write a Review</h3>
+                <form onSubmit={handleReviewSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Rating</label>
+                    <div className="flex gap-2">
+                      {[1, 2, 3, 4, 5].map(star => (
+                        <button
+                          type="button"
+                          key={star}
+                          onClick={() => setReviewRating(star)}
+                          className={`p-1 transition-all ${star <= reviewRating ? 'text-amber-400' : 'text-slate-300'}`}
+                        >
+                          <Star className={`w-6 h-6 ${star <= reviewRating ? 'fill-amber-400' : 'fill-slate-300'}`} />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Your Review</label>
+                    <textarea
+                      value={reviewComment}
+                      onChange={(e) => setReviewComment(e.target.value)}
+                      placeholder="Share your experience with this product..."
+                      className="w-full rounded-xl border border-slate-300 p-3 text-sm focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                      rows="3"
+                    ></textarea>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={submittingReview}
+                    className="bg-brand-600 text-white font-bold py-2 px-6 rounded-xl hover:bg-brand-700 transition-all text-sm disabled:opacity-50"
+                  >
+                    {submittingReview ? 'Submitting...' : 'Submit Review'}
+                  </button>
+                </form>
+              </div>
+
               {/* Individual Reviews */}
               <div className="space-y-4">
                 {(product.reviews || []).map((rev, i) => (
@@ -350,7 +472,7 @@ export const ProductDetail = () => {
 
             <motion.img
               key={lightboxIdx}
-              src={images[lightboxIdx]}
+              src={images[lightboxIdx].url}
               alt="Full view"
               className="max-w-[90vw] max-h-[88vh] object-contain rounded-xl"
               initial={{ scale: 0.93, opacity: 0 }}
@@ -365,12 +487,15 @@ export const ProductDetail = () => {
             </button>
 
             {/* Thumbnail Strip in Lightbox */}
-            <div className="absolute bottom-5 flex gap-3">
+            <div className="absolute bottom-5 flex gap-3 overflow-x-auto max-w-full px-5">
               {images.map((img, i) => (
-                <button key={i} onClick={e => { e.stopPropagation(); setLightboxIdx(i); }}
-                  className={`w-14 h-14 rounded-lg overflow-hidden border-2 transition-all ${lightboxIdx === i ? 'border-white' : 'border-white/30 opacity-50 hover:opacity-80'}`}>
-                  <img src={img} alt="" className="w-full h-full object-cover" />
-                </button>
+                <div key={i} className="flex flex-col items-center gap-1 shrink-0">
+                  <button onClick={e => { e.stopPropagation(); setLightboxIdx(i); }}
+                    className={`w-14 h-14 rounded-lg overflow-hidden border-2 transition-all ${lightboxIdx === i ? 'border-white' : 'border-white/30 opacity-50 hover:opacity-80'}`}>
+                    <img src={img.url} alt="" className="w-full h-full object-cover bg-white" />
+                  </button>
+                  {img.label && <span className="text-[10px] text-white/80 font-medium">{img.label}</span>}
+                </div>
               ))}
             </div>
 

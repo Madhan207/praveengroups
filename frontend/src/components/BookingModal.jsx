@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, Calendar, MapPin, Users, FileText, Loader2,
-  CheckCircle, Phone, Mail, User, Briefcase, ChevronDown
+  CheckCircle, Phone, Mail, User, Briefcase, ChevronDown, LogIn, Lock
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : '/api');
 
@@ -17,6 +18,7 @@ const EVENT_TYPES = [
 
 export const BookingModal = ({ isOpen, onClose, service, package: selectedPackage, business, prefilledDate }) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [bookingId, setBookingId] = useState('');
@@ -54,6 +56,58 @@ export const BookingModal = ({ isOpen, onClose, service, package: selectedPackag
   }, [prefilledDate]);
 
   if (!isOpen) return null;
+
+  // ── Login Wall — shown when the user is not authenticated ──
+  if (!user) {
+    return (
+      <div
+        className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm"
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          onClick={e => e.stopPropagation()}
+          className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden"
+        >
+          <div className="bg-gradient-to-r from-brand-600 to-brand-800 text-white p-6 relative">
+            <button onClick={onClose} className="absolute top-5 right-5 text-white/80 hover:text-white bg-black/20 p-2 rounded-full transition-all">
+              <X className="w-5 h-5" />
+            </button>
+            <div className="flex items-center gap-3">
+              <Lock className="w-6 h-6 text-brand-200" />
+              <h2 className="text-2xl font-bold">Login Required</h2>
+            </div>
+            <p className="text-brand-100 text-sm mt-1">Please sign in to book a service</p>
+          </div>
+          <div className="p-8 text-center">
+            <div className="w-20 h-20 rounded-full bg-brand-50 flex items-center justify-center mx-auto mb-5">
+              <Lock className="w-10 h-10 text-brand-500" />
+            </div>
+            <h3 className="text-xl font-black text-slate-900 mb-2">Sign In to Continue</h3>
+            <p className="text-slate-500 text-sm mb-6">
+              You need to be logged in to make a booking. Create a free account or sign in to proceed.
+            </p>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => { onClose(); navigate('/login', { state: { from: window.location.pathname } }); }}
+                className="w-full py-3.5 bg-brand-600 hover:bg-brand-700 text-white font-black rounded-2xl transition-all shadow-lg shadow-brand-500/25 flex items-center justify-center gap-2"
+              >
+                <LogIn className="w-5 h-5" /> Sign In to Book
+              </button>
+              <button
+                onClick={() => { onClose(); navigate('/signup', { state: { from: window.location.pathname } }); }}
+                className="w-full py-3.5 border-2 border-slate-200 text-slate-700 font-bold rounded-2xl hover:bg-slate-50 transition-all"
+              >
+                Create Free Account
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target;

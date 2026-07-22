@@ -10,6 +10,8 @@ class Order(models.Model):
         ('Shipped', 'Shipped'),
         ('Delivered', 'Delivered'),
         ('Cancelled', 'Cancelled'),
+        ('Returned', 'Returned'),
+        ('Return Rejected', 'Return Rejected'),
     )
     PAYMENT_CHOICES = (
         ('UPI', 'UPI Payment'),
@@ -33,6 +35,12 @@ class Order(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
     tracking_id = models.CharField(max_length=100, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    
+    # New fields for Returns and Invoices
+    return_requested = models.BooleanField(default=False)
+    return_reason = models.TextField(blank=True, null=True)
+    return_proof = models.ImageField(upload_to='returns/', blank=True, null=True)
+    invoice_file = models.FileField(upload_to='invoices/', blank=True, null=True)
 
     def __str__(self):
         return f"Order {self.id} by {self.user.email}"

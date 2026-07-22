@@ -9,6 +9,8 @@ import {
   TrendingUp, AlertTriangle, Building2, History
 } from 'lucide-react';
 
+import { getMediaUrl } from '../utils/media';
+
 const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : '/api');
 const authHeaders = () => ({ headers: { Authorization: `Bearer ${sessionStorage.getItem('access_token')}` } });
 const multipartHeaders = () => ({
@@ -73,22 +75,22 @@ export const AdminDashboard = () => {
   };
 
   const fetchProducts = async () => {
-    try { const r = await axios.get(`${API}/products/`); setProducts(r.data); } catch {}
+    try { const r = await axios.get(`${API}/products/`); const d = r.data?.results || r.data; setProducts(Array.isArray(d) ? d : []); } catch {}
   };
   const fetchOrders = async () => {
-    try { const r = await axios.get(`${API}/orders/?all=true`, authHeaders()); setOrders(r.data); } catch {}
+    try { const r = await axios.get(`${API}/orders/?all=true`, authHeaders()); const d = r.data?.results || r.data; setOrders(Array.isArray(d) ? d : []); } catch {}
   };
   const fetchCategories = async () => {
-    try { const r = await axios.get(`${API}/categories/`); setCategories(r.data); } catch {}
+    try { const r = await axios.get(`${API}/categories/`); const d = r.data?.results || r.data; setCategories(Array.isArray(d) ? d : []); } catch {}
   };
   const fetchBusinesses = async () => {
-    try { const r = await axios.get(`${API}/businesses/`); setBusinesses(r.data); } catch {}
+    try { const r = await axios.get(`${API}/businesses/`); const d = r.data?.results || r.data; setBusinesses(Array.isArray(d) ? d : []); } catch {}
   };
   const fetchUsers = async () => {
-    try { const r = await axios.get(`${API}/users/`, authHeaders()); setUsersList(r.data); } catch {}
+    try { const r = await axios.get(`${API}/users/`, authHeaders()); const d = r.data?.results || r.data; setUsersList(Array.isArray(d) ? d : []); } catch {}
   };
   const fetchAuditLogs = async () => {
-    try { const r = await axios.get(`${API}/auth/audit-logs/`, authHeaders()); setAuditLogs(r.data); } catch {}
+    try { const r = await axios.get(`${API}/auth/audit-logs/`, authHeaders()); const d = r.data?.results || r.data; setAuditLogs(Array.isArray(d) ? d : []); } catch {}
   };
 
   const updateUserRole = async (userId, newRole) => {
@@ -255,7 +257,7 @@ export const AdminDashboard = () => {
         {activeTab === 'overview' && (
           <>
             <h1 className="text-2xl font-heading font-bold text-slate-900">Dashboard Overview</h1>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {[
                 { label: 'Total Products', value: stats.products, icon: Package, color: 'bg-blue-500', light: 'bg-blue-50' },
                 { label: 'Total Orders', value: stats.orders, icon: ShoppingBag, color: 'bg-purple-500', light: 'bg-purple-50' },
@@ -419,8 +421,8 @@ export const AdminDashboard = () => {
                         {order.payment_verification?.screenshot && (
                           <div className="mt-3">
                             <p className="text-xs font-bold text-slate-500 mb-1">Payment Screenshot:</p>
-                            <a href={`http://localhost:8000${order.payment_verification.screenshot}`} target="_blank" rel="noopener noreferrer">
-                              <img src={`http://localhost:8000${order.payment_verification.screenshot}`} alt="Payment Proof" className="h-16 w-16 object-cover rounded-lg border border-slate-200 hover:opacity-80 transition-opacity" />
+                            <a href={getMediaUrl(order.payment_verification.screenshot)} target="_blank" rel="noopener noreferrer">
+                              <img src={getMediaUrl(order.payment_verification.screenshot)} alt="Payment Proof" className="h-16 w-16 object-cover rounded-lg border border-slate-200 hover:opacity-80 transition-opacity" />
                             </a>
                           </div>
                         )}
@@ -560,7 +562,7 @@ export const AdminDashboard = () => {
                       onChange={e => setProductForm({ ...productForm, description: e.target.value })}
                       className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-brand-500 outline-none" />
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {[
                       { label: 'Price (₹) *', name: 'price', req: true },
                       { label: 'Discount Price (₹)', name: 'discount_price', req: false },

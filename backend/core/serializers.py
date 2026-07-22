@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Coupon, Notification, GSTSetting, PaymentSetting, Donation
+from .models import Coupon, Notification, GSTSetting, PaymentSetting, Donation, ContactMessage
 
 class CouponSerializer(serializers.ModelSerializer):
     class Meta:
@@ -24,4 +24,9 @@ class PaymentSettingSerializer(serializers.ModelSerializer):
 class DonationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Donation
+        fields = '__all__'
+
+class ContactMessageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ContactMessage
         fields = '__all__'

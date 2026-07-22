@@ -348,7 +348,7 @@ export const Login = () => {
             </div>
 
             <h1 className="text-3xl font-heading font-bold text-white text-center mb-1.5">Welcome back</h1>
-            <p className="text-center text-sm text-white/50 mb-7">Sign in to your PraveenElectro account</p>
+            <p className="text-center text-sm text-white/50 mb-7">Sign in to your Praveen Groups account</p>
 
             {/* Unauthorized banner */}
             {unauthorized && (

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ProfileSidebar } from '../components/profile/ProfileSidebar';
@@ -14,7 +14,6 @@ import { BookingsTab } from '../components/profile/BookingsTab';
 import { Menu, X } from 'lucide-react';
 
 const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : '/api');
-const authHeaders = () => ({ headers: { Authorization: `Bearer ${sessionStorage.getItem('access_token')}` } });
 
 export const Profile = () => {
   const { user, logout } = useAuth();
@@ -32,8 +31,9 @@ export const Profile = () => {
     
     const fetchOrders = async () => {
       try {
-        const res = await axios.get(`${API}/orders/`, authHeaders());
-        setOrders(res.data);
+        const res = await api.get(`/orders/`);
+        const data = res.data?.results || res.data;
+        setOrders(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error('Failed to fetch orders', err);
       } finally {
@@ -51,7 +51,7 @@ export const Profile = () => {
 
   const renderTabContent = () => {
     switch (activeTab) {
-      case 'dashboard': return <DashboardOverview user={user} orders={orders} />;
+      case 'dashboard': return <DashboardOverview user={user} orders={orders} setActiveTab={setActiveTab} />;
       case 'orders': return <OrdersTab orders={orders} />;
       case 'bookings': return <BookingsTab />;
 
@@ -62,7 +62,7 @@ export const Profile = () => {
       case 'reviews': return <ReviewsTab />;
       case 'settings': return <SettingsTab />;
       case 'security': return <SecurityTab />;
-      default: return <DashboardOverview user={user} orders={orders} />;
+      default: return <DashboardOverview user={user} orders={orders} setActiveTab={setActiveTab} />;
     }
   };
 

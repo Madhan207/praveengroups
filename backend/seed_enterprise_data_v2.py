@@ -1,4 +1,5 @@
 import os
+# pyrefly: ignore [missing-import]
 import django
 import random
 from datetime import timedelta
@@ -7,14 +8,16 @@ import sys
 # Setup Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
 django.setup()
-
+# pyrefly: ignore [missing-import]
 from django.utils import timezone
+# pyrefly: ignore [missing-import]
 from django.db import transaction
 from products.models import Business, Category, Product, ProductImage, Review
 from users.models import User, Address
 from orders.models import Order, OrderItem, PaymentVerification, Cart, CartItem, Invoice
 
 try:
+    # pyrefly: ignore [missing-import]
     from faker import Faker
 except ImportError:
     print("Please install faker: pip install faker")

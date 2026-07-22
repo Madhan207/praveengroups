@@ -82,6 +82,95 @@
   .admin-text-muted {
     color: var(--admin-text-muted);
   }
+
+  /* ── Animation utilities ── */
+  .animate-badge-pop    { animation: badge-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+  .animate-price-drop   { animation: price-drop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+  .animate-bounce-in    { animation: bounce-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+  .animate-fade-up      { animation: fade-up 0.5s ease forwards; }
+  .animate-fade-in      { animation: fade-in 0.4s ease forwards; }
+  .animate-slide-up     { animation: slide-up-fade 0.5s ease forwards; }
+  .animate-float-gentle { animation: float-gentle 6s ease-in-out infinite; }
+  .animate-ticker       { animation: ticker 18s linear infinite; }
+  .animate-glow-pulse   { animation: glow-pulse 2s ease-in-out infinite; }
+  .animate-cart-bounce  { animation: cart-bounce 0.5s ease; }
+  .animate-shake        { animation: shake 0.4s ease; }
+  .animate-shimmer-text {
+    background: linear-gradient(90deg, #0f172a 40%, #2563eb 50%, #0f172a 60%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: spotlight 2.5s linear infinite;
+  }
+
+  /* ── Ripple button effect ── */
+  .btn-ripple {
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-ripple::after {
+    content: '';
+    position: absolute;
+    inset: 50%;
+    width: 0; height: 0;
+    background: rgba(255,255,255,0.25);
+    border-radius: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    transition: width 0.6s, height 0.6s, opacity 0.6s;
+    opacity: 0;
+  }
+  .btn-ripple:active::after {
+    width: 300px; height: 300px;
+    opacity: 0;
+    animation: ripple 0.6s ease;
+  }
+
+  /* ── Deal badge ── */
+  .deal-badge {
+    background: linear-gradient(135deg, #ef4444, #f97316);
+    animation: badge-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+
+  /* ── Product card hover glow ── */
+  .card-hover-glow:hover {
+    box-shadow: 0 20px 40px rgba(37, 99, 235, 0.12), 0 0 0 1px rgba(37, 99, 235, 0.08);
+  }
+
+  /* ── Ticker / announcement bar ── */
+  .ticker-wrap { overflow: hidden; white-space: nowrap; }
+  .ticker-inner { display: inline-block; animation: ticker 22s linear infinite; }
+
+  /* ── Image zoom container ── */
+  .img-zoom-container { overflow: hidden; }
+  .img-zoom-container img { transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+  .img-zoom-container:hover img { transform: scale(1.08); }
+
+  /* ── Flip card effect ── */
+  .flip-card { perspective: 1000px; }
+  .flip-card-inner {
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-style: preserve-3d;
+  }
+  .flip-card:hover .flip-card-inner { transform: rotateY(180deg); }
+  .flip-card-front, .flip-card-back { backface-visibility: hidden; }
+  .flip-card-back { transform: rotateY(180deg); position: absolute; inset: 0; }
+
+  /* ── Sticky nav shadow ── */
+  .sticky-nav-shadow {
+    box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+    backdrop-filter: blur(12px);
+  }
+
+  /* ── Stagger children animation ── */
+  .stagger-children > * { opacity: 0; animation: stagger-in 0.5s ease forwards; }
+  .stagger-children > *:nth-child(1) { animation-delay: 0.05s; }
+  .stagger-children > *:nth-child(2) { animation-delay: 0.10s; }
+  .stagger-children > *:nth-child(3) { animation-delay: 0.15s; }
+  .stagger-children > *:nth-child(4) { animation-delay: 0.20s; }
+  .stagger-children > *:nth-child(5) { animation-delay: 0.25s; }
+  .stagger-children > *:nth-child(6) { animation-delay: 0.30s; }
+  .stagger-children > *:nth-child(7) { animation-delay: 0.35s; }
+  .stagger-children > *:nth-child(8) { animation-delay: 0.40s; }
 }
 
 /* ── Animations ─────────────────────────────────────── */
@@ -94,6 +183,12 @@
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
   50% { transform: translateY(-20px); }
+}
+
+@keyframes float-gentle {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  33% { transform: translateY(-8px) rotate(1deg); }
+  66% { transform: translateY(-4px) rotate(-1deg); }
 }
 
 @keyframes skeleton-pulse {
@@ -121,6 +216,11 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes fade-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
 @keyframes spin-slow {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
@@ -129,6 +229,67 @@
 @keyframes pulse-ring {
   0% { transform: scale(1); opacity: 0.5; }
   100% { transform: scale(1.5); opacity: 0; }
+}
+
+@keyframes badge-pop {
+  0%   { transform: scale(0) rotate(-10deg); opacity: 0; }
+  60%  { transform: scale(1.15) rotate(3deg); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+@keyframes price-drop {
+  0%   { transform: translateY(-12px); opacity: 0; }
+  60%  { transform: translateY(3px); }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes ripple {
+  0%   { transform: scale(0); opacity: 0.5; }
+  100% { transform: scale(4); opacity: 0; }
+}
+
+@keyframes ticker {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes spotlight {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes stagger-in {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes bounce-in {
+  0%   { transform: scale(0.3); opacity: 0; }
+  50%  { transform: scale(1.05); opacity: 0.8; }
+  70%  { transform: scale(0.9); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25%       { transform: translateX(-4px) rotate(-1deg); }
+  75%       { transform: translateX(4px) rotate(1deg); }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
+  50%       { box-shadow: 0 0 0 10px rgba(37, 99, 235, 0); }
+}
+
+@keyframes slide-up-fade {
+  from { opacity: 0; transform: translateY(30px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes cart-bounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  30%       { transform: translateY(-10px) scale(1.1); }
+  60%       { transform: translateY(-4px) scale(1.05); }
 }
 
 /* ── Login Background ────────────────────────────── */
@@ -333,3 +494,12 @@
 [data-theme="dark"] ::-webkit-scrollbar-thumb { background: #1e3050; }
 
 * { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
+
+/* ── Hide Scrollbar Utility ──────────────────────── */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

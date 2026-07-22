@@ -102,9 +102,9 @@ function PackagesTab({ businessId }) {
       if (imageFile) fd.append('image_file', imageFile);
 
       if (editing) {
-        await axios.patch(`${API}/service-packages/${editing.id}/`, fd, { headers: { ...getHeaders(), 'Content-Type': 'multipart/form-data' } });
+        await axios.patch(`${API}/service-packages/${editing.id}/`, fd, { headers: getHeaders() });
       } else {
-        await axios.post(`${API}/service-packages/`, fd, { headers: { ...getHeaders(), 'Content-Type': 'multipart/form-data' } });
+        await axios.post(`${API}/service-packages/`, fd, { headers: getHeaders() });
       }
       setModalOpen(false);
       fetch();
@@ -253,7 +253,7 @@ function GalleryTab({ businessId }) {
       else if (form.image_url) fd.append('image_url', form.image_url);
       fd.append('caption', form.caption);
       fd.append('category', form.category);
-      await axios.post(`${API}/gallery-images/`, fd, { headers: { ...getHeaders(), 'Content-Type': 'multipart/form-data' } });
+      await axios.post(`${API}/gallery-images/`, fd, { headers: getHeaders() });
       setForm({ caption: '', category: '', image_url: '' });
       setImageFile(null);
       if (fileRef.current) fileRef.current.value = '';

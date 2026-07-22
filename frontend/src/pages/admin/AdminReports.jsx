@@ -83,6 +83,150 @@ const AdminReports = () => {
           'Amount': parseFloat(item.total_amount).toFixed(2),
           'Status': item.status
         }));
+      } else if (reportType === 'products') {
+        params.all = 'true';
+        const response = await api.get('/orders/', { params });
+        let results = response.data.results || response.data;
+        
+        if (dateFrom) results = results.filter(item => new Date(item.created_at) >= new Date(dateFrom));
+        if (dateTo) {
+          const toDate = new Date(dateTo);
+          toDate.setHours(23, 59, 59, 999);
+          results = results.filter(item => new Date(item.created_at) <= toDate);
+        }
+        
+        const productStats = {};
+        results.forEach(order => {
+          if (order.status === 'Cancelled' || order.status === 'Returned') return;
+          (order.items || []).forEach(item => {
+            if (!productStats[item.product_name]) {
+              productStats[item.product_name] = { category: item.product_category_name, quantity: 0, revenue: 0 };
+            }
+            productStats[item.product_name].quantity += item.quantity;
+            productStats[item.product_name].revenue += parseFloat(item.price) * item.quantity;
+          });
+        });
+        
+        data = Object.keys(productStats).map(pName => ({
+          'Product Name': pName,
+          'Category': productStats[pName].category || 'N/A',
+          'Quantity Sold': productStats[pName].quantity,
+          'Total Revenue': parseFloat(productStats[pName].revenue).toFixed(2)
+        }));
+      } else if (reportType === 'customers') {
+        params.all = 'true';
+        const response = await api.get('/orders/', { params });
+        let results = response.data.results || response.data;
+        
+        if (dateFrom) results = results.filter(item => new Date(item.created_at) >= new Date(dateFrom));
+        if (dateTo) {
+          const toDate = new Date(dateTo);
+          toDate.setHours(23, 59, 59, 999);
+          results = results.filter(item => new Date(item.created_at) <= toDate);
+        }
+        
+        const customerStats = {};
+        results.forEach(order => {
+          const email = order.user_email || order.mobile_number || 'Guest';
+          const name = order.full_name || order.user_name || 'Guest';
+          const key = `${email}|${name}`;
+          if (!customerStats[key]) {
+            customerStats[key] = { name, email, orders: 0, spent: 0, lastOrder: order.created_at };
+          }
+          customerStats[key].orders += 1;
+          if (order.status !== 'Cancelled' && order.status !== 'Returned') {
+            customerStats[key].spent += parseFloat(order.total_amount);
+          }
+          if (new Date(order.created_at) > new Date(customerStats[key].lastOrder)) {
+            customerStats[key].lastOrder = order.created_at;
+          }
+        });
+        
+        data = Object.values(customerStats).map(c => ({
+          'Customer Name': c.name,
+          'Email/Contact': c.email,
+          'Total Orders': c.orders,
+          'Total Spent': parseFloat(c.spent).toFixed(2),
+          'Last Order Date': new Date(c.lastOrder).toLocaleDateString()
+        }));
+      } else if (reportType === 'payments') {
+        params.all = 'true';
+        const response = await api.get('/orders/', { params });
+        let results = response.data.results || response.data;
+        
+        if (dateFrom) results = results.filter(item => new Date(item.created_at) >= new Date(dateFrom));
+        if (dateTo) {
+          const toDate = new Date(dateTo);
+          toDate.setHours(23, 59, 59, 999);
+          results = results.filter(item => new Date(item.created_at) <= toDate);
+        }
+        
+        data = results.map(item => ({
+          'Date': new Date(item.created_at).toLocaleDateString(),
+          'Order ID': item.id,
+          'Customer': item.full_name || item.user_name,
+          'Amount': parseFloat(item.total_amount).toFixed(2),
+          'Method': item.payment_method,
+          'UTR Number': item.payment_verification?.utr_number || 'N/A',
+          'Verification': item.payment_verification ? (item.payment_verification.is_verified ? 'Verified' : 'Pending') : 'N/A',
+          'Order Status': item.status
+        }));
+      } else if (reportType === 'inventory') {
+        const invParams = {};
+        if (selectedBusiness !== 'all' && activeBusinessObj?.slug) {
+          invParams.business = activeBusinessObj.slug;
+        }
+        const response = await api.get('/products/', { params: invParams });
+        let results = response.data.results || response.data;
+        
+        data = results.map(item => ({
+          'Product Name': item.name,
+          'SKU': item.sku || 'N/A',
+          'Category': item.category?.name || 'N/A',
+          'Price': parseFloat(item.price).toFixed(2),
+          'Stock': item.stock,
+          'Status': item.is_active ? 'Active' : 'Inactive',
+          'Is Featured': item.is_featured ? 'Yes' : 'No'
+        }));
+      } else if (reportType === 'trust') {
+        const response = await api.get('/donations/', { params });
+        let results = response.data.results || response.data;
+        
+        if (dateFrom) results = results.filter(item => new Date(item.created_at) >= new Date(dateFrom));
+        if (dateTo) {
+          const toDate = new Date(dateTo);
+          toDate.setHours(23, 59, 59, 999);
+          results = results.filter(item => new Date(item.created_at) <= toDate);
+        }
+        
+        data = results.map(item => ({
+          'Date': new Date(item.created_at).toLocaleDateString(),
+          'Donor Name': item.donor_name,
+          'Email': item.donor_email || 'N/A',
+          'Phone': item.donor_phone || 'N/A',
+          'Amount': parseFloat(item.amount).toFixed(2),
+          'Transaction ID': item.transaction_id || 'N/A',
+          'Status': item.status
+        }));
+      } else if (reportType === 'transport') {
+        const response = await api.get('/quote-requests/', { params });
+        let results = response.data.results || response.data;
+        
+        if (dateFrom) results = results.filter(item => new Date(item.created_at) >= new Date(dateFrom));
+        if (dateTo) {
+          const toDate = new Date(dateTo);
+          toDate.setHours(23, 59, 59, 999);
+          results = results.filter(item => new Date(item.created_at) <= toDate);
+        }
+        
+        data = results.map(item => ({
+          'Date': new Date(item.created_at).toLocaleDateString(),
+          'Customer': item.name,
+          'Phone': item.phone,
+          'Event/Cargo': item.event_type || 'N/A',
+          'Location': item.event_location || 'N/A',
+          'Status': item.status
+        }));
       } else {
         // Fallback for unimplemented reports
         data = [

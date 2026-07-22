@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import api from '../../utils/api';
 import { useBusinessContext } from '../../context/BusinessContext';
 import { Package, Search, AlertTriangle, CheckCircle, ArrowDown, Download, Briefcase, XCircle } from 'lucide-react';
+import { getMediaUrl } from '../../utils/media';
 import { SkeletonTable } from '../../components/admin/SkeletonLoader';
 import { useToast } from '../../context/ToastContext';
 import * as XLSX from 'xlsx';
@@ -201,7 +202,7 @@ const AdminInventory = () => {
                   // Get primary image
                   let imgSrc = '';
                   if (p.images && p.images.length > 0) {
-                    imgSrc = p.images[0].image_file ? `http://localhost:8000${p.images[0].image_file}` : p.images[0].image;
+                    imgSrc = getMediaUrl(p.images[0].image_file || p.images[0].image);
                   }
 
                   return (

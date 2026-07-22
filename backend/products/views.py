@@ -29,7 +29,6 @@ class CategoryViewSet(viewsets.ModelViewSet):
 class ProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-    lookup_field = 'slug'
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name', 'description', 'category__name', 'category__business__name', 'brand', 'sku']
     ordering_fields = ['price', 'created_at', 'name']
@@ -42,6 +41,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         business_slug = self.request.query_params.get('business', None)
         is_featured = self.request.query_params.get('is_featured', None)
         is_service = self.request.query_params.get('is_service', None)
+        is_trending = self.request.query_params.get('is_trending', None)
 
         if category_slug:
             queryset = queryset.filter(category__slug=category_slug)
@@ -54,6 +54,9 @@ class ProductViewSet(viewsets.ModelViewSet):
         if is_service is not None:
             is_service_bool = str(is_service).lower() == 'true'
             queryset = queryset.filter(is_service=is_service_bool)
+        if is_trending is not None:
+            is_trending_bool = str(is_trending).lower() == 'true'
+            queryset = queryset.filter(is_trending=is_trending_bool)
 
         return queryset
 
@@ -62,26 +65,61 @@ class ProductViewSet(viewsets.ModelViewSet):
             return [permissions.IsAdminUser()]
         return [permissions.AllowAny()]
 
-    def _extract_image(self, request):
-        """Pull image file out of request so it doesn't break serializer validation."""
-        image_file = request.FILES.get('image') or request.data.get('image')
-        # Build a mutable copy of the data without the 'image' key
-        data = request.data.dict() if hasattr(request.data, 'dict') else dict(request.data)
-        data.pop('image', None)
-        return image_file, data
+    def _extract_images(self, request):
+        """Pull image files out of request so they don't break serializer validation."""
+        import json
+        
+        image_files = request.FILES.getlist('images')
+        if not image_files and request.FILES.get('image'):
+            image_files = [request.FILES.get('image')]
+
+        # Build a plain dict - carefully copy all non-image, non-file keys
+        data = {}
+        qd = request.data  # This is a QueryDict for multipart
+        
+        for key in qd.keys():
+            if key in ('images', 'image', 'image_labels', 'deleted_image_ids'):
+                continue
+            values = qd.getlist(key)
+            # Only take first value for regular fields
+            data[key] = values[0] if len(values) == 1 else values
+
+        # Parse JSON fields sent as strings from FormData
+        for field in ['features', 'specifications', 'highlights']:
+            if field in data and isinstance(data[field], str):
+                try:
+                    data[field] = json.loads(data[field])
+                except (json.JSONDecodeError, ValueError):
+                    pass
+
+        # Parse boolean fields
+        for field in ['is_featured', 'is_best_seller', 'is_new_arrival', 'is_trending', 'is_service']:
+            if field in data and isinstance(data[field], str):
+                data[field] = data[field].lower() in ('true', '1', 'yes')
+
+        # Extract image labels
+        image_labels = qd.getlist('image_labels') if hasattr(qd, 'getlist') else []
+
+        # Extract deleted image ids
+        deleted_image_ids = qd.getlist('deleted_image_ids') if hasattr(qd, 'getlist') else []
+
+        return image_files, image_labels, deleted_image_ids, data
 
     def create(self, request, *args, **kwargs):
-        image_file, data = self._extract_image(request)
+        image_files, image_labels, deleted_image_ids, data = self._extract_images(request)
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
 
-        if image_file:
-            ProductImage.objects.create(
-                product=serializer.instance,
-                image_file=image_file,
-                is_primary=True
-            )
+        if image_files:
+            for index, image_file in enumerate(image_files):
+                label = image_labels[index] if image_labels and index < len(image_labels) else ''
+                ProductImage.objects.create(
+                    product=serializer.instance,
+                    image_file=image_file,
+                    is_primary=(index == 0),
+                    label=label
+                )
 
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
@@ -89,22 +127,29 @@ class ProductViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
-        image_file, data = self._extract_image(request)
+        image_files, image_labels, deleted_image_ids, data = self._extract_images(request)
 
         serializer = self.get_serializer(instance, data=data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
+        
+        if deleted_image_ids:
+            instance.images.filter(id__in=deleted_image_ids).delete()
 
-        if image_file:
-            product_image = instance.images.filter(is_primary=True).first()
-            if product_image:
-                product_image.image_file = image_file
-                product_image.save()
-            else:
+        if image_files:
+            # If new images are provided, we optionally could clear old ones or just add to them.
+            # The prompt implies adding multiple images like flipkart. Let's add them. 
+            # If they want to replace, we'd need a different mechanism. For now, we'll just append 
+            # or if it's a completely new upload, we can make the first one primary.
+            # To keep it simple, we will just add the new images. If there are no existing images, make first primary.
+            existing_count = instance.images.count()
+            for index, image_file in enumerate(image_files):
+                label = image_labels[index] if image_labels and index < len(image_labels) else ''
                 ProductImage.objects.create(
                     product=instance,
                     image_file=image_file,
-                    is_primary=True
+                    is_primary=(existing_count == 0 and index == 0),
+                    label=label
                 )
 
         return Response(serializer.data)
@@ -127,11 +172,15 @@ class BannerViewSet(viewsets.ModelViewSet):
         queryset = Banner.objects.all()
         business_slug = self.request.query_params.get('business', None)
         is_global = self.request.query_params.get('global', None)
+        position = self.request.query_params.get('position', None)
         
         if is_global == 'true':
             queryset = queryset.filter(business__isnull=True)
         elif business_slug:
             queryset = queryset.filter(business__slug=business_slug)
+            
+        if position:
+            queryset = queryset.filter(position=position)
             
         return queryset
 

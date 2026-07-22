@@ -8,7 +8,7 @@ import {
 
 const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : '/api');
 
-const EMPTY_FORM = { title: '', subtitle: '', business: '', priority: 0, is_active: true };
+const EMPTY_FORM = { title: '', subtitle: '', business: '', position: 'HERO', priority: 0, is_active: true };
 
 export default function AdminBanners() {
   const [banners, setBanners] = useState([]);
@@ -71,7 +71,7 @@ export default function AdminBanners() {
   const openForm = (banner = null) => {
     setEditingBanner(banner);
     setFormData(banner
-      ? { title: banner.title || '', subtitle: banner.subtitle || '', business: banner.business || '', priority: banner.priority || 0, is_active: banner.is_active }
+      ? { title: banner.title || '', subtitle: banner.subtitle || '', business: banner.business || '', position: banner.position || 'HERO', priority: banner.priority || 0, is_active: banner.is_active }
       : EMPTY_FORM
     );
     setImageFile(null);
@@ -108,12 +108,13 @@ export default function AdminBanners() {
     data.append('title', formData.title);
     data.append('subtitle', formData.subtitle);
     data.append('business', formData.business || '');
+    data.append('position', formData.position);
     data.append('priority', formData.priority);
     data.append('is_active', formData.is_active);
     if (imageFile) data.append('image_file', imageFile);
 
     try {
-      const headers = { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${sessionStorage.getItem('access_token')}` };
+      const headers = { Authorization: `Bearer ${sessionStorage.getItem('access_token')}` };
       if (editingBanner) {
         await axios.patch(`${API}/banners/${editingBanner.id}/`, data, { headers });
       } else {
@@ -302,8 +303,8 @@ export default function AdminBanners() {
                     />
                   </div>
 
-                  {/* Target + Priority row */}
-                  <div className="grid grid-cols-2 gap-3">
+                  {/* Target + Position + Priority row */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
                       <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: 'var(--admin-text-muted)' }}>
                         Target
@@ -322,6 +323,25 @@ export default function AdminBanners() {
                         {businesses.map(b => (
                           <option key={b.id} value={b.id}>🏢 {b.name}</option>
                         ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: 'var(--admin-text-muted)' }}>
+                        Position
+                      </label>
+                      <select
+                        value={formData.position}
+                        onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                        className="w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-all outline-none focus:ring-2 focus:ring-brand-500/40"
+                        style={{
+                          background: 'var(--admin-content-bg, #f8fafc)',
+                          border: '1.5px solid var(--admin-border)',
+                          color: 'var(--admin-text)',
+                        }}
+                      >
+                        <option value="HERO">Hero Banner</option>
+                        <option value="DISCOUNT">Discount Poster</option>
                       </select>
                     </div>
 
@@ -422,8 +442,13 @@ export default function AdminBanners() {
                 )}
 
                 {/* Overlay badges */}
-                <div className="absolute top-2.5 left-2.5 flex gap-1.5">
-                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider backdrop-blur-sm flex items-center gap-1 ${
+                <div className="absolute top-2.5 left-2.5 flex flex-col gap-1.5">
+                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider backdrop-blur-sm flex items-center gap-1 w-max ${
+                    banner.position === 'DISCOUNT' ? 'bg-orange-500/90 text-white' : 'bg-blue-500/90 text-white'
+                  }`}>
+                    {banner.position === 'DISCOUNT' ? 'Discount Poster' : 'Hero Banner'}
+                  </span>
+                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider backdrop-blur-sm flex items-center gap-1 w-max ${
                     banner.is_active
                       ? 'bg-emerald-500/90 text-white'
                       : 'bg-slate-700/80 text-slate-300'
@@ -469,14 +494,14 @@ export default function AdminBanners() {
                 )}
 
                 <div className="mt-3 flex items-center justify-between">
-                  <span className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                  <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-sm ${
                     banner.business
-                      ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
-                      : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-emerald-600 text-white'
                   }`}>
                     {banner.business
-                      ? <><Building2 className="w-2.5 h-2.5" />{bizName(banner.business)}</>
-                      : <><Globe className="w-2.5 h-2.5" />Global</>
+                      ? <><Building2 className="w-3 h-3" />{bizName(banner.business)}</>
+                      : <><Globe className="w-3 h-3" />Global</>
                     }
                   </span>
 

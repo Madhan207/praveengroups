@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import { Menu, Search, Bell, Sun, Moon, ChevronRight, ExternalLink, Briefcase, Check } from 'lucide-react';
+import { Menu, Search, Bell, Sun, Moon, ChevronRight, ExternalLink, Briefcase, Check, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useBusinessContext } from '../../context/BusinessContext';
 const BREADCRUMB_MAP = {
   '/admin':           ['Dashboard'],
   '/admin/orders':    ['Dashboard', 'Orders'],
@@ -25,6 +26,9 @@ const AdminTopbar = ({ sidebarCollapsed, onToggleSidebar, darkMode, onToggleDark
   const { pathname } = useLocation();
   const [searchOpen, setSearchOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [contextMenuOpen, setContextMenuOpen] = useState(false);
+  
+  const { businesses, selectedBusiness, setSelectedBusiness, loading, activeBusinessObj } = useBusinessContext();
   
   const crumbs = BREADCRUMB_MAP[pathname] || ['Dashboard'];
 
@@ -60,6 +64,74 @@ const AdminTopbar = ({ sidebarCollapsed, onToggleSidebar, darkMode, onToggleDark
 
 
       <div className="flex-1" />
+
+      {/* Business Context Switcher */}
+      <div className="relative z-50">
+        <button
+          onClick={() => setContextMenuOpen(!contextMenuOpen)}
+          className="flex items-center gap-2 px-3 py-2 border rounded-xl hover:bg-slate-50 transition-colors bg-white shadow-sm"
+          style={{ borderColor: 'var(--admin-border)' }}
+        >
+          <div className="w-6 h-6 rounded bg-brand-100 flex items-center justify-center">
+            <Briefcase className="w-3.5 h-3.5 text-brand-600" />
+          </div>
+          <div className="text-left hidden sm:block">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-0.5">Context</p>
+            <p className="text-sm font-semibold leading-none truncate max-w-[120px]" style={{ color: 'var(--admin-text)' }}>
+              {selectedBusiness === 'all' ? 'All Businesses' : activeBusinessObj?.name || 'Loading...'}
+            </p>
+          </div>
+          <ChevronDown className="w-4 h-4 ml-1" style={{ color: 'var(--admin-text-muted)' }} />
+        </button>
+
+        <AnimatePresence>
+          {contextMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: 8, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 8, scale: 0.95 }}
+              transition={{ duration: 0.15 }}
+              className="absolute right-0 top-full mt-2 w-64 rounded-2xl shadow-xl border overflow-hidden bg-white"
+              style={{ borderColor: 'var(--admin-border)' }}
+            >
+              <div className="p-2">
+                <button
+                  onClick={() => { setSelectedBusiness('all'); setContextMenuOpen(false); }}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${selectedBusiness === 'all' ? 'bg-brand-50 text-brand-700' : 'hover:bg-slate-50 text-slate-700'}`}
+                >
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${selectedBusiness === 'all' ? 'bg-brand-100' : 'bg-slate-100'}`}>
+                    <Briefcase className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1 text-left">All Businesses</div>
+                  {selectedBusiness === 'all' && <Check className="w-4 h-4" />}
+                </button>
+                
+                <div className="h-px bg-slate-100 my-2 mx-2" />
+                
+                <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                  {loading ? (
+                    <div className="p-4 text-center text-sm text-slate-500">Loading businesses...</div>
+                  ) : (
+                    businesses.map(biz => (
+                      <button
+                        key={biz.slug}
+                        onClick={() => { setSelectedBusiness(biz.slug); setContextMenuOpen(false); }}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${selectedBusiness === biz.slug ? 'bg-brand-50 text-brand-700' : 'hover:bg-slate-50 text-slate-700'}`}
+                      >
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${selectedBusiness === biz.slug ? 'bg-brand-100' : 'bg-slate-100'}`}>
+                          <span className="text-xs uppercase font-bold">{biz.name.slice(0, 2)}</span>
+                        </div>
+                        <div className="flex-1 text-left truncate">{biz.name}</div>
+                        {selectedBusiness === biz.slug && <Check className="w-4 h-4 shrink-0" />}
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
       {/* Search bar */}
       <div className="hidden lg:flex items-center relative">

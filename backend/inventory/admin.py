@@ -1,4 +1,6 @@
+# pyrefly: ignore [missing-import]
 from django.contrib import admin
+# pyrefly: ignore [missing-import]
 from .models import Supplier, PurchaseOrder, PurchaseOrderItem
 
 class PurchaseOrderItemInline(admin.TabularInline):

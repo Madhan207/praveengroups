@@ -3,11 +3,10 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/Button';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 import { CheckCircle, Package, MapPin, CreditCard } from 'lucide-react';
 
 const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : '/api');
-const authHeaders = () => ({ headers: { Authorization: `Bearer ${sessionStorage.getItem('access_token')}` } });
 
 export const Checkout = () => {
   const { cartItems, getCartTotal, clearCart } = useCart();
@@ -24,7 +23,7 @@ export const Checkout = () => {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const res = await axios.get(`${API}/payment-settings/`);
+        const res = await api.get(`/payment-settings/`);
         const settings = res.data.results || res.data;
         if (settings.length > 0) {
           setPaymentSettings(settings[0]);
@@ -74,7 +73,7 @@ export const Checkout = () => {
     setError('');
     try {
       // 1. Create the order
-      const orderRes = await axios.post(`${API}/orders/`, {
+      const orderRes = await api.post(`/orders/`, {
         full_name: formData.full_name,
         mobile_number: formData.mobile_number,
         address: formData.address,
@@ -88,7 +87,7 @@ export const Checkout = () => {
           quantity: item.quantity,
           price: item.discount_price || item.price,
         })),
-      }, authHeaders());
+      });
 
       const newOrderId = orderRes.data.id;
       setOrderId(newOrderId);
@@ -99,9 +98,8 @@ export const Checkout = () => {
         fd.append('order', newOrderId);
         fd.append('utr_number', utrNumber);
         fd.append('screenshot', screenshot);
-        await axios.post(`${API}/payment-verifications/`, fd, {
+        await api.post(`/payment-verifications/`, fd, {
           headers: {
-            Authorization: `Bearer ${sessionStorage.getItem('access_token')}`,
             'Content-Type': 'multipart/form-data',
           },
         });

@@ -3,12 +3,14 @@ import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, Filter, Download, CheckCircle, XCircle, Eye,
-  ChevronLeft, ChevronRight, RefreshCw, SlidersHorizontal, Calendar, FileSpreadsheet
+  ChevronLeft, ChevronRight, RefreshCw, SlidersHorizontal, Calendar, FileSpreadsheet, RotateCcw, AlertCircle
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import OrderDrawer from '../../components/admin/OrderDrawer';
 import { useToast } from '../../context/ToastContext';
 import { SkeletonTable } from '../../components/admin/SkeletonLoader';
+
+import { getMediaUrl } from '../../utils/media';
 
 const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : '/api');
 const authH = () => ({ headers: { Authorization: `Bearer ${sessionStorage.getItem('access_token')}` } });
@@ -20,13 +22,15 @@ const STATUS_COLORS = {
   'Shipped':          'bg-cyan-100 text-cyan-700 border-cyan-200',
   'Delivered':        'bg-green-100 text-green-700 border-green-200',
   'Cancelled':        'bg-red-100 text-red-700 border-red-200',
+  'Returned':         'bg-purple-100 text-purple-700 border-purple-200',
+  'Return Rejected':  'bg-orange-100 text-orange-700 border-orange-200',
 };
 const StatusBadge = ({ status }) => (
   <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${STATUS_COLORS[status] || 'bg-slate-100 text-slate-600 border-slate-200'}`}>{status}</span>
 );
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50];
-const ALL_STATUSES = ['All', 'Pending', 'Payment Verified', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
+const ALL_STATUSES = ['All', 'Pending', 'Payment Verified', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Returned', 'Return Rejected'];
 const ALL_METHODS  = ['All', 'UPI', 'COD'];
 
 const exportCSV = (orders) => {
@@ -86,6 +90,7 @@ const AdminOrders = () => {
   const [sortKey, setSortKey]       = useState('id');
   const [sortDir, setSortDir]       = useState('desc');
   const [businesses, setBusinesses] = useState([]);
+  const [viewMode, setViewMode]     = useState('All'); // 'All' or 'Returns'
   
   const { toast } = useToast();
 
@@ -96,7 +101,8 @@ const AdminOrders = () => {
         axios.get(`${API}/orders/?all=true`, authH()),
         axios.get(`${API}/businesses/`, authH())
       ]);
-      setOrders(r.data);
+      const d = r.data?.results || r.data;
+      setOrders(Array.isArray(d) ? d : []);
       let bizList = b.data.results || b.data;
       setBusinesses(bizList.filter(bz => bz.type === 'product'));
     } catch { toast('Failed to fetch orders', 'error'); }
@@ -114,6 +120,11 @@ const AdminOrders = () => {
     } catch { toast('Update failed', 'error'); }
   };
 
+  const localUpdate = (id, field, value) => {
+    setOrders(prev => prev.map(o => o.id === id ? { ...o, [field]: value } : o));
+    if (drawerOrder?.id === id) setDrawer(prev => ({ ...prev, [field]: value }));
+  };
+
   const bulkUpdate = async () => {
     if (!bulkStatus || !selected.length) return;
     await Promise.all(selected.map(id => updateStatus(id, 'status', bulkStatus)));
@@ -128,6 +139,10 @@ const AdminOrders = () => {
 
   const filtered = useMemo(() => {
     let list = [...orders];
+
+    if (viewMode === 'Returns') {
+      list = list.filter(o => o.return_requested);
+    }
 
     if (bizFilter !== 'All') {
       list = list.filter(o => String(o.business) === bizFilter);
@@ -163,7 +178,7 @@ const AdminOrders = () => {
       return 0;
     });
     return list;
-  }, [orders, search, statusFilter, methodFilter, bizFilter, dateFrom, dateTo, sortKey, sortDir]);
+  }, [orders, viewMode, search, statusFilter, methodFilter, bizFilter, dateFrom, dateTo, sortKey, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const paginated  = filtered.slice((page - 1) * pageSize, page * pageSize);
@@ -180,8 +195,10 @@ const AdminOrders = () => {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-heading font-bold" style={{ color: 'var(--admin-text)' }}>Order Management</h1>
-          <p className="text-sm mt-0.5" style={{ color: 'var(--admin-text-muted)' }}>{filtered.length} orders</p>
+          <h1 className="text-2xl font-heading font-bold" style={{ color: 'var(--admin-text)' }}>
+            {viewMode === 'Returns' ? 'Return Center' : 'Order Management'}
+          </h1>
+          <p className="text-sm mt-0.5" style={{ color: 'var(--admin-text-muted)' }}>{filtered.length} {viewMode === 'Returns' ? 'return requests' : 'orders'}</p>
         </div>
         <div className="flex gap-2">
           <button onClick={fetchOrders} className="flex items-center gap-2 text-sm px-3 py-2 rounded-xl border transition-all hover:border-brand-400 hover:text-brand-600"
@@ -201,6 +218,27 @@ const AdminOrders = () => {
       </div>
 
 
+
+      {/* Tabs */}
+      <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl w-fit" style={{ borderColor: 'var(--admin-border)' }}>
+        <button 
+          onClick={() => { setViewMode('All'); setPage(1); }} 
+          className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'All' ? 'bg-white text-brand-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+        >
+          All Orders
+        </button>
+        <button 
+          onClick={() => { setViewMode('Returns'); setPage(1); }} 
+          className={`px-6 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${viewMode === 'Returns' ? 'bg-red-500 text-white shadow-sm' : 'text-red-500 hover:bg-red-50'}`}
+        >
+          Return Center
+          {orders.filter(o => o.return_requested && o.status !== 'Returned' && o.status !== 'Return Rejected').length > 0 && (
+            <span className="bg-white text-red-600 px-1.5 py-0.5 rounded-full text-xs">
+              {orders.filter(o => o.return_requested && o.status !== 'Returned' && o.status !== 'Return Rejected').length}
+            </span>
+          )}
+        </button>
+      </div>
 
       {/* Filters */}
       <div className="admin-card p-4 flex flex-wrap gap-3 items-center">
@@ -262,7 +300,7 @@ const AdminOrders = () => {
             <select value={bulkStatus} onChange={e => setBulkStatus(e.target.value)}
               className="text-sm px-3 py-1.5 rounded-lg border border-brand-300 outline-none text-brand-700 bg-white">
               <option value="">Change status to...</option>
-              {['Pending','Payment Verified','Processing','Shipped','Delivered','Cancelled'].map(s => <option key={s}>{s}</option>)}
+              {['Pending','Payment Verified','Processing','Shipped','Delivered','Cancelled','Returned','Return Rejected'].map(s => <option key={s}>{s}</option>)}
             </select>
             <button onClick={bulkUpdate} className="text-sm bg-brand-600 text-white px-4 py-1.5 rounded-lg font-semibold hover:bg-brand-700">Apply</button>
             <button onClick={() => setSelected([])} className="text-sm text-brand-600 underline">Clear</button>
@@ -270,8 +308,98 @@ const AdminOrders = () => {
         )}
       </AnimatePresence>
 
-      {/* Table */}
-      <div className="admin-card overflow-hidden">
+      {/* Return Center Card View */}
+      {viewMode === 'Returns' && (
+        <div className="space-y-3">
+          {paginated.length === 0 && (
+            <div className="bg-white rounded-2xl p-12 text-center border border-slate-100">
+              <RotateCcw className="w-10 h-10 text-slate-200 mx-auto mb-3" />
+              <p className="font-semibold text-slate-400">No return requests found</p>
+            </div>
+          )}
+          {paginated.map((o, i) => (
+            <motion.div
+              key={o.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.04 }}
+              className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden"
+            >
+              <div className="flex items-center justify-between px-5 py-3 border-b border-slate-50" style={{ background: '#fafafa' }}>
+                <div className="flex items-center gap-3">
+                  <span className="font-bold text-brand-600 text-sm">#{o.id}</span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                    o.status === 'Returned' ? 'bg-green-100 text-green-700 border-green-200' :
+                    o.status === 'Return Rejected' ? 'bg-orange-100 text-orange-700 border-orange-200' :
+                    'bg-yellow-100 text-yellow-700 border-yellow-200'
+                  }`}>
+                    {o.status === 'Returned' ? 'ACCEPTED' : o.status === 'Return Rejected' ? 'REJECTED' : 'PENDING REVIEW'}
+                  </span>
+                </div>
+                <span className="text-xs text-slate-400">{new Date(o.created_at).toLocaleDateString('en-IN')}</span>
+              </div>
+              <div className="p-5">
+                <div className="flex flex-col sm:flex-row gap-5">
+                  <div className="flex-1 space-y-3">
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Customer</p>
+                      <p className="text-sm font-semibold text-slate-800">{o.user_name || o.full_name}</p>
+                      <p className="text-xs text-slate-400">{o.user_email}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Return Reason</p>
+                      <p className="text-sm text-slate-700 bg-red-50 border border-red-100 rounded-xl p-2.5 leading-relaxed">
+                        {o.return_reason || 'No reason provided.'}
+                      </p>
+                    </div>
+                    <div className="flex gap-2 flex-wrap">
+                      <span className="text-xs font-bold text-slate-500">Order Amount:</span>
+                      <span className="text-xs font-bold text-green-700">₹{Number(o.total_amount).toLocaleString('en-IN')}</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2 sm:w-44 shrink-0">
+                    {o.return_proof && (
+                      <a href={getMediaUrl(o.return_proof)} target="_blank" rel="noopener noreferrer">
+                        <img
+                          src={getMediaUrl(o.return_proof)}
+                          alt="Return Proof"
+                          className="w-full h-24 object-cover rounded-xl border-2 border-red-100 hover:opacity-90 transition-opacity"
+                        />
+                        <p className="text-[10px] text-red-400 mt-0.5 text-center">Photo Proof</p>
+                      </a>
+                    )}
+                    <button
+                      onClick={() => setDrawer(o)}
+                      className="w-full py-2 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-xl hover:bg-indigo-100 transition-colors flex items-center justify-center gap-1.5"
+                    >
+                      <Eye className="w-3.5 h-3.5" /> View Full Details
+                    </button>
+                    {o.status !== 'Returned' && o.status !== 'Return Rejected' && (
+                      <>
+                        <button
+                          onClick={() => updateStatus(o.id, 'status', 'Returned')}
+                          className="w-full py-2 bg-green-600 text-white text-xs font-bold rounded-xl hover:bg-green-700 transition-colors"
+                        >
+                          ✓ Accept Return
+                        </button>
+                        <button
+                          onClick={() => updateStatus(o.id, 'status', 'Return Rejected')}
+                          className="w-full py-2 bg-red-600 text-white text-xs font-bold rounded-xl hover:bg-red-700 transition-colors"
+                        >
+                          ✗ Reject Return
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      )}
+
+      {/* Table View (All Orders) */}
+      {viewMode === 'All' && (<div className="admin-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead style={{ background: 'var(--admin-content-bg)' }}>
@@ -310,7 +438,14 @@ const AdminOrders = () => {
                       onChange={e => setSelected(prev => e.target.checked ? [...prev, o.id] : prev.filter(x => x !== o.id))}
                       className="w-4 h-4 rounded" />
                   </td>
-                  <td className="px-4 py-3.5 font-bold text-brand-600">#{o.id}</td>
+                  <td className="px-4 py-3.5">
+                    <div className="flex flex-col gap-1">
+                      <span className="font-bold text-brand-600">#{o.id}</span>
+                      {o.return_requested && (
+                        <span className="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full font-bold w-fit">Return Req</span>
+                      )}
+                    </div>
+                  </td>
                   <td className="px-4 py-3.5">
                     <p className="font-semibold text-sm" style={{ color: 'var(--admin-text)' }}>{o.user_name || o.full_name}</p>
                     <p className="text-xs" style={{ color: 'var(--admin-text-muted)' }}>{o.user_email}</p>
@@ -327,8 +462,8 @@ const AdminOrders = () => {
                   </td>
                   <td className="px-4 py-3.5">
                     <select value={o.status} onChange={e => updateStatus(o.id, 'status', e.target.value)}
-                      className={`text-xs font-bold px-2 py-1 rounded-lg border outline-none cursor-pointer ${STATUS_COLORS[o.status]}`}>
-                      {['Pending','Payment Verified','Processing','Shipped','Delivered','Cancelled'].map(s => <option key={s}>{s}</option>)}
+                      className={`text-xs font-bold px-2 py-1 rounded-lg border outline-none cursor-pointer ${STATUS_COLORS[o.status] || ''}`}>
+                      {['Pending','Payment Verified','Processing','Shipped','Delivered','Cancelled','Returned','Return Rejected'].map(s => <option key={s}>{s}</option>)}
                     </select>
                   </td>
                   <td className="px-4 py-3.5 text-xs" style={{ color: 'var(--admin-text-muted)' }}>{new Date(o.created_at).toLocaleDateString('en-IN')}</td>
@@ -399,10 +534,11 @@ const AdminOrders = () => {
           </div>
         </div>
       </div>
+      )}
 
       {/* Order Drawer */}
       {drawerOrder && (
-        <OrderDrawer order={drawerOrder} onClose={() => setDrawer(null)} onStatusChange={updateStatus} />
+        <OrderDrawer order={drawerOrder} onClose={() => setDrawer(null)} onStatusChange={updateStatus} onLocalUpdate={localUpdate} />
       )}
     </div>
   );
