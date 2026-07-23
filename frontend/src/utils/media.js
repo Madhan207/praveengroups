@@ -9,7 +9,8 @@ export const getMediaUrl = (path) => {
     return path;
   }
   
-  const baseUrl = import.meta.env.VITE_MEDIA_URL || (import.meta.env.DEV ? 'http://localhost:8000' : '');
+  const baseUrl = import.meta.env.VITE_MEDIA_URL || (import.meta.env.DEV ? 'http://localhost:8000' : 'https://praveengroups.onrender.com');
+
   const cleanPath = path.startsWith('/') ? path : `/${path}`;
   
   return `${baseUrl}${cleanPath}`;
