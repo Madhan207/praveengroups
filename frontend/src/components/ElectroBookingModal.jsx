@@ -116,15 +116,21 @@ export const ElectroBookingModal = ({ isOpen, onClose }) => {
     setLoading(true);
     try {
       const token = sessionStorage.getItem("access_token") || localStorage.getItem("access_token");
-      const res = await axios.post(`${API}/electro-bookings/`, form, {
+      const payload = {
+        ...form,
+        preferred_time: form.preferred_time_slot
+      };
+      
+      const res = await axios.post(`${API}/electro-bookings/`, payload, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       setBookingId(res.data.booking_id);
       setSuccess(true);
     } catch (e) {
+      console.error("Booking API Error:", e);
       const data = e.response?.data;
       if (data && typeof data === "object") setErrors(data);
-      else setErrors({ general: "Booking failed. Please try again." });
+      else setErrors({ general: "Booking failed. Network Error or Server Unavailable." });
     } finally {
       setLoading(false);
     }
