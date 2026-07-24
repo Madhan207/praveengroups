@@ -132,6 +132,12 @@ function HeroSlider({ banners, businessName, businessDescription, whatsapp, phon
                   >
                     <ArrowRight className="w-5 h-5" /> Get Quote
                   </button>
+                  <a
+                    href="/track-booking"
+                    className="flex items-center gap-2 bg-slate-800/80 hover:bg-slate-700 text-white border border-slate-700 font-bold px-8 py-4 rounded-2xl transition-all backdrop-blur-sm shadow-xl text-lg"
+                  >
+                    <Search className="w-5 h-5" /> Track Booking
+                  </a>
                 </>
               )}
               {whatsapp && (

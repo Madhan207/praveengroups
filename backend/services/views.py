@@ -300,16 +300,41 @@ class TrackBookingView(APIView):
             return Response({'error': 'Please provide a booking ID (e.g. BK-A3F9X2).'}, status=status.HTTP_400_BAD_REQUEST)
         try:
             b = Booking.objects.select_related('business', 'service', 'package').get(booking_id=booking_id)
+            is_electro = False
         except Booking.DoesNotExist:
-            return Response({'error': 'Booking not found. Please check your booking ID.'}, status=status.HTTP_404_NOT_FOUND)
+            try:
+                b = ElectroBooking.objects.get(booking_id=booking_id)
+                is_electro = True
+            except ElectroBooking.DoesNotExist:
+                return Response({'error': 'Booking not found. Please check your booking ID.'}, status=status.HTTP_404_NOT_FOUND)
 
         STATUS_COLORS = {
-            'Pending':     'amber',
-            'Confirmed':   'blue',
-            'In Progress': 'purple',
-            'Completed':   'green',
-            'Cancelled':   'red',
+            'Pending':             'amber',
+            'Confirmed':           'blue',
+            'Technician Assigned': 'blue',
+            'In Progress':         'purple',
+            'Completed':           'green',
+            'Cancelled':           'red',
         }
+
+        if is_electro:
+            return Response({
+                'booking_id':    b.booking_id,
+                'status':        b.status,
+                'status_color':  STATUS_COLORS.get(b.status, 'slate'),
+                'business_name': 'Praveen Electronics',
+                'service_name':  b.service_type,
+                'package_name':  b.appliance_brand,
+                'customer_name': b.name or (b.user.get_full_name() if b.user else 'Guest'),
+                'booking_date':  str(b.preferred_date),
+                'booking_time':  b.preferred_time,
+                'event_type':    'Electrical Service',
+                'location':      f"{b.address}, {b.city} {b.pincode}",
+                'guest_count':   None,
+                'total_amount':  str(b.estimated_cost) if b.estimated_cost else None,
+                'special_requests': b.issue_description,
+                'created_at':    b.created_at.strftime('%d %b %Y, %I:%M %p'),
+            })
 
         return Response({
             'booking_id':    b.booking_id,
