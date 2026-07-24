@@ -24,7 +24,7 @@ export const Contact = () => {
     e.preventDefault();
     setStatus('Sending...');
     try {
-      const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : '/api');
+      const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : 'https://praveengroups.onrender.com/api');
       await axios.post(`${API}/contact-messages/`, formData);
       setStatus('Message Sent! We will get back to you soon.');
       setFormData({ name: '', email: '', subject: '', message: '' });

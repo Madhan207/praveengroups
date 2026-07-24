@@ -12,7 +12,7 @@ import { SkeletonTable } from '../../components/admin/SkeletonLoader';
 
 import { getMediaUrl } from '../../utils/media';
 
-const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : '/api');
+const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : 'https://praveengroups.onrender.com/api');
 const authH = () => ({ headers: { Authorization: `Bearer ${sessionStorage.getItem('access_token')}` } });
 
 const STATUS_COLORS = {

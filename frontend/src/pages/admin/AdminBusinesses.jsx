@@ -3,7 +3,7 @@ import { Briefcase, Building2, Globe, Truck, MapPin, Mail, Phone, Edit3 } from '
 import { SkeletonStats } from '../../components/admin/SkeletonLoader';
 import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
-const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : '/api');
+const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : 'https://praveengroups.onrender.com/api');
 
 const TYPE_COLORS = {
   product: 'bg-brand-100 text-brand-700 border-brand-200',

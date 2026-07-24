@@ -5,7 +5,7 @@ import { TrendingUp, ShoppingBag, Package, Users } from 'lucide-react';
 import { SalesLineChart, RevenueLineChart, StatusDonutChart, ProductBarChart } from '../../components/admin/AdminChart';
 import { SkeletonCard } from '../../components/admin/SkeletonLoader';
 
-const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : '/api');
+const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : 'https://praveengroups.onrender.com/api');
 const authH = () => ({ headers: { Authorization: `Bearer ${sessionStorage.getItem('access_token')}` } });
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];

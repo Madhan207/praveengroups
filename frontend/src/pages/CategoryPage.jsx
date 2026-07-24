@@ -5,7 +5,7 @@ import { ProductCard } from '../components/ProductCard';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SlidersHorizontal, X, Loader2 } from 'lucide-react';
 
-const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : '/api');
+const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : 'https://praveengroups.onrender.com/api');
 
 const PRICE_RANGES = [
   { label: 'All Prices', min: 0, max: Infinity },

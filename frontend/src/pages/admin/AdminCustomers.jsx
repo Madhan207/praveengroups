@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 
-const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : '/api');
+const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : 'https://praveengroups.onrender.com/api');
 
 const ROLE_CONFIG = {
   superadmin: { label: 'Super Admin', color: 'bg-purple-100 text-purple-700 border-purple-200', icon: ShieldAlert, dot: 'bg-purple-500' },

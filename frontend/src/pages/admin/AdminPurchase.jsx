@@ -4,7 +4,7 @@ import { ShoppingCart, Plus, Search, Filter, Download, Briefcase, Calendar, X } 
 import { useToast } from '../../context/ToastContext';
 import axios from 'axios';
 
-const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : '/api');
+const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : 'https://praveengroups.onrender.com/api');
 const authHeaders = () => ({ headers: { Authorization: `Bearer ${sessionStorage.getItem('access_token')}` } });
 
 const AdminPurchase = () => {

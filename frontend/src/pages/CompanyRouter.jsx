@@ -6,7 +6,7 @@ import { ServiceBusinessPage } from './ServiceBusinessPage';
 import { TrustPage } from './TrustPage';
 import { LogisticsPage } from './LogisticsPage';
 
-const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : '/api');
+const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : 'https://praveengroups.onrender.com/api');
 
 export const CompanyRouter = () => {
   const { slug } = useParams();

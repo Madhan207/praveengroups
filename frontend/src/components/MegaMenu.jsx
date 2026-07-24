@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Store, Zap, Shirt, Wrench, ShoppingBasket, Sparkles, Sprout, Building2, Music, Camera, GraduationCap, HeartHandshake, Truck, ArrowRight } from 'lucide-react';
 import axios from 'axios';
 
-const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : '/api');
+const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : 'https://praveengroups.onrender.com/api');
 
 const ICONS = {
     'praveen-electro-world': Zap,

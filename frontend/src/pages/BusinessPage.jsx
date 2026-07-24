@@ -8,7 +8,7 @@ import { DiscountPosters } from '../components/DiscountPosters';
 import { Store, ShoppingBag, Loader2 } from 'lucide-react';
 import { Button } from '../components/Button';
 
-const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : '/api');
+const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : 'https://praveengroups.onrender.com/api');
 
 export const BusinessPage = () => {
     const { slug } = useParams();

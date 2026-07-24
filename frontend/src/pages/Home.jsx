@@ -51,7 +51,7 @@ function getBizImage(biz) {
   return DEFAULT_BIZ_IMAGE;
 }
 
-const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : '/api');
+const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : 'https://praveengroups.onrender.com/api');
 
 const TRUST_BADGES = [
   { icon: Truck, label: 'Nationwide Delivery', sub: 'Fast & Secure', color: '#3b82f6', bg: '#dbeafe' },

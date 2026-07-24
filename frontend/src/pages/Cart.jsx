@@ -7,7 +7,7 @@ import { Trash2, Plus, Minus, ShoppingBag } from 'lucide-react';
 import { motion } from 'framer-motion';
 import axios from 'axios';
 
-const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : '/api');
+const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : 'https://praveengroups.onrender.com/api');
 
 export const Cart = () => {
   const { cartItems, updateQuantity, removeFromCart, getCartTotal } = useCart();

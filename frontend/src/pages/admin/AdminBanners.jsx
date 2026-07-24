@@ -6,7 +6,7 @@ import {
   Layers, Sparkles
 } from 'lucide-react';
 
-const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : '/api');
+const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : 'https://praveengroups.onrender.com/api');
 
 const EMPTY_FORM = { title: '', subtitle: '', business: '', position: 'HERO', priority: 0, is_active: true };
 
