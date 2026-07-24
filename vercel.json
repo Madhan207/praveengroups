@@ -1,42 +1,21 @@
 {
-  "version": 2,
-  "builds": [
+  "rewrites": [
     {
-      "src": "backend/backend/wsgi.py",
-      "use": "@vercel/python",
-      "config": {
-        "maxLambdaSize": "15mb",
-        "runtime": "python3.10"
-      }
+      "source": "/api/(.*)",
+      "destination": "https://praveengroups.onrender.com/api/$1"
     },
     {
-      "src": "frontend/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/backend/backend/wsgi.py"
+      "source": "/media/(.*)",
+      "destination": "https://praveengroups.onrender.com/media/$1"
     },
     {
-      "src": "/admin/(.*)",
-      "dest": "/backend/backend/wsgi.py"
+      "source": "/static/(.*)",
+      "destination": "https://praveengroups.onrender.com/static/$1"
     },
     {
-      "src": "/media/(.*)",
-      "dest": "/backend/backend/wsgi.py"
-    },
-    {
-      "src": "/static/(.*)",
-      "dest": "/backend/backend/wsgi.py"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/frontend/$1"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
+

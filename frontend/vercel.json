@@ -2,11 +2,15 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://madhan207.pythonanywhere.com/api/$1"
+      "destination": "https://praveengroups.onrender.com/api/$1"
     },
     {
       "source": "/media/(.*)",
-      "destination": "https://madhan207.pythonanywhere.com/media/$1"
+      "destination": "https://praveengroups.onrender.com/media/$1"
+    },
+    {
+      "source": "/static/(.*)",
+      "destination": "https://praveengroups.onrender.com/static/$1"
     },
     {
       "source": "/(.*)",
@@ -14,3 +18,4 @@
     }
   ]
 }
+
