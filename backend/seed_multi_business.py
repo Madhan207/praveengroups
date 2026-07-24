@@ -95,73 +95,44 @@ PRODUCT_BUSINESSES = [
         "banner_images": BANNER_IMAGES,
         "product_image_pool": ELECTRONICS_IMGS,
         "categories": [
-            {"name": "Smartphones", "products": [
-                {"name": "Samsung Galaxy S24 Ultra", "price": 129999, "dp": 119999, "brand": "Samsung"},
-                {"name": "iPhone 15 Pro Max", "price": 159900, "dp": 149900, "brand": "Apple"},
+            {"name": "Smartphones", "image": "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=600&q=80", "products": [
+                {"name": "Samsung Galaxy S24 Ultra", "price": 129999, "dp": 119999, "brand": "Samsung", "is_trending": True},
+                {"name": "iPhone 15 Pro Max", "price": 159900, "dp": 149900, "brand": "Apple", "is_trending": True},
                 {"name": "OnePlus 12", "price": 64999, "dp": 59999, "brand": "OnePlus"},
                 {"name": "Redmi Note 13 Pro", "price": 24999, "dp": 21999, "brand": "Xiaomi"},
                 {"name": "Realme 12 Pro+", "price": 29999, "dp": 26999, "brand": "Realme"},
             ]},
-            {"name": "Laptops", "products": [
-                {"name": "MacBook Air M3", "price": 114900, "dp": 109900, "brand": "Apple"},
+            {"name": "Laptops", "image": "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600&q=80", "products": [
+                {"name": "MacBook Air M3", "price": 114900, "dp": 109900, "brand": "Apple", "is_trending": True},
                 {"name": "Dell XPS 15", "price": 145000, "dp": 135000, "brand": "Dell"},
                 {"name": "Lenovo ThinkPad X1 Carbon", "price": 135000, "dp": 125000, "brand": "Lenovo"},
                 {"name": "HP Spectre x360", "price": 125000, "dp": 115000, "brand": "HP"},
                 {"name": "Asus ROG Zephyrus G14", "price": 119990, "dp": 109990, "brand": "Asus"},
             ]},
-            {"name": "Smart TVs", "products": [
-                {"name": "Samsung 65\" QLED 4K TV", "price": 89990, "dp": 79990, "brand": "Samsung"},
+            {"name": "Smart TVs", "image": "https://images.unsplash.com/photo-1593305841991-05c297ba4575?w=600&q=80", "products": [
+                {"name": "Samsung 65\" QLED 4K TV", "price": 89990, "dp": 79990, "brand": "Samsung", "is_trending": True},
                 {"name": "LG OLED 55\" C3", "price": 99990, "dp": 89990, "brand": "LG"},
                 {"name": "Sony Bravia 4K XR 65\"", "price": 109990, "dp": 99990, "brand": "Sony"},
                 {"name": "OnePlus 50\" Q1 Pro QLED", "price": 49999, "dp": 44999, "brand": "OnePlus"},
             ]},
-            {"name": "Home Audio", "products": [
-                {"name": "Sony WH-1000XM5 Headphones", "price": 29990, "dp": 25990, "brand": "Sony"},
+            {"name": "Home Audio", "image": "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&q=80", "products": [
+                {"name": "Sony WH-1000XM5 Headphones", "price": 29990, "dp": 25990, "brand": "Sony", "is_trending": True},
                 {"name": "Bose SoundLink Max", "price": 35990, "dp": 32990, "brand": "Bose"},
                 {"name": "JBL Xtreme 3 Speaker", "price": 19990, "dp": 16990, "brand": "JBL"},
             ]},
-            {"name": "DJ Equipment", "products": [
+            {"name": "DJ Equipment", "image": "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=600&q=80", "products": [
                 {"name": "Pioneer CDJ-3000 Player", "price": 245000, "dp": None, "brand": "Pioneer"},
                 {"name": "Allen & Heath Xone:96 Mixer", "price": 185000, "dp": None, "brand": "Allen & Heath"},
                 {"name": "Native Instruments Traktor S4 MK3", "price": 65000, "dp": 58000, "brand": "Native Instruments"},
             ]},
-            {"name": "CCTV & Security", "products": [
+            {"name": "CCTV & Security", "image": "https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=600&q=80", "products": [
                 {"name": "CP Plus 2MP HD Camera Kit 8CH", "price": 14999, "dp": 12999, "brand": "CP Plus"},
                 {"name": "Hikvision 5MP Turret Camera", "price": 4999, "dp": 3999, "brand": "Hikvision"},
             ]},
-            {"name": "Solar & Power", "products": [
+            {"name": "Solar & Power", "image": "https://images.unsplash.com/photo-1509391365360-2e959784a276?w=600&q=80", "products": [
                 {"name": "Luminous 3kW Solar Panel Kit", "price": 85000, "dp": 79000, "brand": "Luminous", "is_trending": True},
                 {"name": "Genus 150Ah Tubular Battery", "price": 12999, "dp": 11499, "brand": "Genus"},
             ]},
-        ]
-    },
-    {
-        "name": "Praveen Electronics",
-        "slug": "praveen-electronics",
-        "description": "Home Appliances, Air Conditioners, Refrigerators, Washing Machines & Electronics Repair",
-        "type": "product",
-        "banner_images": BANNER_IMAGES,
-        "product_image_pool": ELECTRONICS_IMGS,
-        "categories": [
-            {"name": "Air Conditioners", "products": [
-                {"name": "Daikin 1.5 Ton 5 Star Inverter Split AC", "price": 45990, "dp": 41990, "brand": "Daikin", "is_trending": True},
-                {"name": "Voltas 1.4 Ton 3 Star Split AC", "price": 32990, "dp": 29990, "brand": "Voltas", "is_trending": True},
-                {"name": "LG 1.5 Ton 5 Star Dual Inverter AC", "price": 47990, "dp": 43990, "brand": "LG"},
-            ]},
-            {"name": "Refrigerators", "products": [
-                {"name": "LG 242L 3 Star Frost Free Double Door Refrigerator", "price": 27990, "dp": 24990, "brand": "LG", "is_trending": True},
-                {"name": "Samsung 183L 4 Star Single Door Refrigerator", "price": 17990, "dp": 15990, "brand": "Samsung"},
-                {"name": "Whirlpool 265L 3 Star Double Door Refrigerator", "price": 29990, "dp": 26990, "brand": "Whirlpool"},
-            ]},
-            {"name": "Washing Machines", "products": [
-                {"name": "Bosch 7 kg 5 Star Fully Automatic Front Load Washing Machine", "price": 31990, "dp": 28990, "brand": "Bosch", "is_trending": True},
-                {"name": "Whirlpool 7.5 kg Fully Automatic Top Load Washing Machine", "price": 18490, "dp": 16490, "brand": "Whirlpool"},
-                {"name": "IFB 8 kg 5 Star Front Load Washing Machine", "price": 36990, "dp": 33990, "brand": "IFB"},
-            ]},
-            {"name": "Microwave Ovens", "products": [
-                {"name": "IFB 30 L Convection Microwave Oven", "price": 16490, "dp": 14490, "brand": "IFB"},
-                {"name": "Samsung 28 L Convection Microwave Oven", "price": 12990, "dp": 11490, "brand": "Samsung"},
-            ]}
         ]
     },
     {
@@ -319,6 +290,73 @@ PRODUCT_BUSINESSES = [
 # SERVICE BUSINESSES — rich JSON data, ZERO products
 # ─────────────────────────────────────────────────────────────────────────────
 SERVICE_BUSINESSES = [
+    {
+        "name": "Praveen Electronics",
+        "slug": "praveen-electronics",
+        "description": "Professional Electrical Services & Home Appliance Repair — AC, Washing Machine, Refrigerator, TV & House Wiring",
+        "type": "service",
+        "about_us": "Praveen Electronics is Tamil Nadu's trusted doorstep appliance service and electrical repair provider. With over 10 years of experience and 15,000+ satisfied clients, our certified technicians handle AC servicing, washing machine repair, refrigerator gas charging, TV mounting, microwave repair, and complete residential electrical wiring. All services come with 100% genuine parts and 90-day warranty.",
+        "mission_vision": "Mission: To provide prompt, affordable, and expert electrical & appliance repair services right at your doorstep.\n\nVision: To be South India's #1 trusted service partner for home appliances and electrical solutions.",
+        "contact_phone": "+91 98765 11223",
+        "contact_email": "service@praveenelectronics.com",
+        "whatsapp_number": "919876511223",
+        "address": "No. 12, Main Service Road, Anna Nagar, Chennai - 600040",
+        "banner_images": BANNER_IMAGES,
+        "social_links": {
+            "instagram": "https://instagram.com",
+            "facebook": "https://facebook.com",
+            "youtube": "https://youtube.com"
+        },
+        "services_data": [
+            {"name": "AC Service & Repair", "description": "Doorstep AC filter cleaning, deep chemical wash, gas refilling, and compressor troubleshooting.", "image": "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=600&q=80"},
+            {"name": "Washing Machine Service", "description": "Front load, top load, and semi-automatic washing machine drum repair, motor fix, and water leak resolution.", "image": "https://images.unsplash.com/photo-1610557892470-55d9e80c0bce?w=600&q=80"},
+            {"name": "Refrigerator Repair", "description": "Double door, single door, and side-by-side refrigerator gas filling, cooling issue fix, and thermostat replacement.", "image": "https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?w=600&q=80"},
+            {"name": "TV & Home Theatre Wall Mount", "description": "Smart TV wall mounting, cable concealment, soundbar installation, and home theatre wiring.", "image": "https://images.unsplash.com/photo-1593305841991-05c297ba4575?w=600&q=80"},
+            {"name": "Microwave & Oven Repair", "description": "Convection and solo microwave heating issue repair, magnetron replacement, and touch panel fix.", "image": "https://images.unsplash.com/photo-1574269909862-7e1d70bb8078?w=600&q=80"},
+            {"name": "House Electrical Wiring & MCB", "description": "Complete house wiring inspection, short circuit fix, MCB installation, and inverter connection.", "image": "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=600&q=80"},
+        ],
+        "packages_data": [
+            {
+                "name": "Basic Inspection Visit",
+                "price": "₹299",
+                "duration": "1 Hour",
+                "badge": None,
+                "features": ["Doorstep Technician Visit", "Complete Appliance Diagnosis", "Upfront Cost Estimation", "Adjustable against final repair bill"]
+            },
+            {
+                "name": "AC Jet Service Package",
+                "price": "₹899",
+                "duration": "1.5 Hours",
+                "badge": "Popular",
+                "features": ["High-pressure Water Jet Clean", "Filter & Coil Sanitization", "Gas Pressure Check", "90 Days Service Warranty"]
+            },
+            {
+                "name": "Annual Maintenance (AMC)",
+                "price": "₹2,999",
+                "duration": "1 Year",
+                "badge": "Best Value",
+                "features": ["3 Free AC/Appliance Services", "Unlimited Breakdown Visits", "15% Off on Replacement Parts", "Priority Technician Booking"]
+            },
+        ],
+        "gallery_data": [
+            {"image": "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=800&q=80", "caption": "Certified AC Technician at Work", "category": "AC Service"},
+            {"image": "https://images.unsplash.com/photo-1610557892470-55d9e80c0bce?w=800&q=80", "caption": "Washing Machine Drum Servicing", "category": "Washing Machine"},
+            {"image": "https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?w=800&q=80", "caption": "Refrigerator Gas Charging", "category": "Refrigerator"},
+        ],
+        "team_data": [
+            {"name": "Karthik Service Lead", "role": "Chief Electrical Technician", "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&q=80", "bio": "12+ years experience in HVAC & home appliance servicing."},
+            {"name": "Suresh Appliance Specialist", "role": "Senior Washing Machine Tech", "image": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&q=80", "bio": "Expert in Bosch, IFB, Samsung & LG front load machines."},
+        ],
+        "testimonials_data": [
+            {"name": "Venkatesh R.", "role": "Anna Nagar Resident", "rating": 5, "comment": "AC was not cooling properly. Technician arrived within 45 mins, performed jet cleaning, and now it cools like brand new!"},
+            {"name": "Lakshmi Narayanan", "role": "T. Nagar Resident", "rating": 5, "comment": "Washing machine had a heavy vibration issue. Fixed on the spot with genuine spare parts. Very professional service!"},
+        ],
+        "faqs_data": [
+            {"question": "How quickly can a technician visit?", "answer": "We offer same-day doorstep service within 2-4 hours of booking across Chennai."},
+            {"question": "Is there a warranty on repairs?", "answer": "Yes! All spare parts and labor come with a 90-day warranty."},
+        ],
+        "events_data": [],
+    },
     {
         "name": "Praveen DJ Events",
         "slug": "praveen-dj-events",
@@ -684,7 +722,7 @@ def run():
                 business=biz,
                 name=cat_data["name"],
                 slug=f"{biz.slug}-{slugify(cat_data['name'])}",
-                image=img_pool[0]
+                image=cat_data.get("image", img_pool[0])
             )
             products_to_create = []
             for p_data in cat_data["products"]:
