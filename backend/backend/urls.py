@@ -19,8 +19,11 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
+from products.views import seed_database_view
+
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/seed-db/', seed_database_view, name='seed-db'),
     path('api/auth/', include('users.urls')),
     path('api/users/', getattr(__import__('users.views', fromlist=['UserListView']), 'UserListView').as_view()),
     path('api/', include('products.urls')),
@@ -29,6 +32,7 @@ urlpatterns = [
     path('api/', include('services.urls')),
     path('api/', include('inventory.urls')),
 ]
+
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
