@@ -13,12 +13,10 @@ class BusinessViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         if not Business.objects.exists():
-            try:
-                import seed_multi_business
-                seed_multi_business.run()
-            except Exception as e:
-                print("Auto-seed error:", e)
+            import seed_multi_business
+            seed_multi_business.run()
         return Business.objects.all()
+
 
 
 
