@@ -107,6 +107,9 @@ DATABASES = {
         conn_max_age=600
     )
 }
+if DATABASES['default']['ENGINE'] == 'django.db.backends.mysql':
+    DATABASES['default']['OPTIONS'] = {'init_command': 'SET foreign_key_checks = 0;'}
+
 
 
 # Password validation
