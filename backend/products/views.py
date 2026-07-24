@@ -216,3 +216,23 @@ class GlobalSearchView(APIView):
             "categories": CategorySerializer(categories, many=True).data,
             "products": ProductSerializer(products, many=True).data
         })
+
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
+
+@api_view(['GET', 'POST'])
+@permission_classes([AllowAny])
+def seed_database_view(request):
+    try:
+        import seed_multi_business
+        seed_multi_business.run()
+        return Response({
+            "status": "success",
+            "message": "Database seeded successfully with all businesses, categories, products, and banners!"
+        }, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({
+            "status": "error",
+            "message": str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
