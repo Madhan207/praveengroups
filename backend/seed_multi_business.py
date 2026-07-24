@@ -659,14 +659,12 @@ def run():
             )
             products_to_create = []
             for p_data in cat_data["products"]:
-                base_slug = slugify(f"{biz.slug}-{p_data['name']}")
-                slug = f"{base_slug}-{random.randint(1000,9999)}"
                 products_to_create.append(Product(
                     category=cat,
                     name=p_data["name"],
-                    slug=slug,
                     brand=p_data.get("brand", ""),
                     sku=f"SKU-{random.randint(10000,99999)}",
+
                     description=f"Premium {p_data['name']} available at {biz.name}. Genuine product with manufacturer warranty.",
                     price=p_data["price"],
                     discount_price=p_data.get("dp"),
