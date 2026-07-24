@@ -12,6 +12,16 @@ class BusinessViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     lookup_field = 'slug'
 
+    def list(self, request, *args, **kwargs):
+        if not Business.objects.exists():
+            try:
+                import seed_multi_business
+                seed_multi_business.run()
+            except Exception as e:
+                print("Auto-seed error:", e)
+        return super().list(request, *args, **kwargs)
+
+
 class CategoryViewSet(viewsets.ModelViewSet):
     serializer_class = CategorySerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
