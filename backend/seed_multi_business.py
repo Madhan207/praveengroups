@@ -130,9 +130,38 @@ PRODUCT_BUSINESSES = [
                 {"name": "Hikvision 5MP Turret Camera", "price": 4999, "dp": 3999, "brand": "Hikvision"},
             ]},
             {"name": "Solar & Power", "products": [
-                {"name": "Luminous 3kW Solar Panel Kit", "price": 85000, "dp": 79000, "brand": "Luminous"},
+                {"name": "Luminous 3kW Solar Panel Kit", "price": 85000, "dp": 79000, "brand": "Luminous", "is_trending": True},
                 {"name": "Genus 150Ah Tubular Battery", "price": 12999, "dp": 11499, "brand": "Genus"},
             ]},
+        ]
+    },
+    {
+        "name": "Praveen Electronics",
+        "slug": "praveen-electronics",
+        "description": "Home Appliances, Air Conditioners, Refrigerators, Washing Machines & Electronics Repair",
+        "type": "product",
+        "banner_images": BANNER_IMAGES,
+        "product_image_pool": ELECTRONICS_IMGS,
+        "categories": [
+            {"name": "Air Conditioners", "products": [
+                {"name": "Daikin 1.5 Ton 5 Star Inverter Split AC", "price": 45990, "dp": 41990, "brand": "Daikin", "is_trending": True},
+                {"name": "Voltas 1.4 Ton 3 Star Split AC", "price": 32990, "dp": 29990, "brand": "Voltas", "is_trending": True},
+                {"name": "LG 1.5 Ton 5 Star Dual Inverter AC", "price": 47990, "dp": 43990, "brand": "LG"},
+            ]},
+            {"name": "Refrigerators", "products": [
+                {"name": "LG 242L 3 Star Frost Free Double Door Refrigerator", "price": 27990, "dp": 24990, "brand": "LG", "is_trending": True},
+                {"name": "Samsung 183L 4 Star Single Door Refrigerator", "price": 17990, "dp": 15990, "brand": "Samsung"},
+                {"name": "Whirlpool 265L 3 Star Double Door Refrigerator", "price": 29990, "dp": 26990, "brand": "Whirlpool"},
+            ]},
+            {"name": "Washing Machines", "products": [
+                {"name": "Bosch 7 kg 5 Star Fully Automatic Front Load Washing Machine", "price": 31990, "dp": 28990, "brand": "Bosch", "is_trending": True},
+                {"name": "Whirlpool 7.5 kg Fully Automatic Top Load Washing Machine", "price": 18490, "dp": 16490, "brand": "Whirlpool"},
+                {"name": "IFB 8 kg 5 Star Front Load Washing Machine", "price": 36990, "dp": 33990, "brand": "IFB"},
+            ]},
+            {"name": "Microwave Ovens", "products": [
+                {"name": "IFB 30 L Convection Microwave Oven", "price": 16490, "dp": 14490, "brand": "IFB"},
+                {"name": "Samsung 28 L Convection Microwave Oven", "price": 12990, "dp": 11490, "brand": "Samsung"},
+            ]}
         ]
     },
     {
@@ -603,7 +632,7 @@ def run():
     print("Creating Global Banners...")
     for i, (title, subtitle, cta) in enumerate([
         ("Welcome to Praveen Groups", "Your trusted partner in electronics, fashion, groceries, events & more", "Explore All Businesses"),
-        ("Quality Across Every Division", "11 specialized businesses serving Tamil Nadu with pride", "Shop Now"),
+        ("Quality Across Every Division", "12 specialized businesses serving Tamil Nadu with pride", "Shop Now"),
         ("Professional Services & Premium Products", "From grand weddings to daily groceries — we've got you covered", "Get Started"),
     ]):
         Banner.objects.create(
@@ -670,9 +699,10 @@ def run():
                     discount_price=p_data.get("dp"),
                     gst_percentage=18.0,
                     stock=random.randint(10, 100),
-                    rating=round(random.uniform(3.8, 5.0), 1),
-                    reviews_count=random.randint(5, 500),
+                    rating=round(random.uniform(4.0, 5.0), 1),
+                    reviews_count=random.randint(20, 500),
                     is_featured=random.choice([True, False, False]),
+                    is_trending=p_data.get("is_trending", random.choice([True, False, False, False])),
                     is_service=False,
                     warranty_info="1 Year Manufacturer Warranty",
                     return_policy="7 Days Replacement",

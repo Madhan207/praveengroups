@@ -6,6 +6,8 @@ import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { QuickViewModal } from "./QuickViewModal";
 
+import { getMediaUrl } from "../utils/media";
+
 export const ProductCard = memo(({ product }) => {
   const { addToCart } = useCart();
   const { user } = useAuth();
@@ -42,6 +44,10 @@ export const ProductCard = memo(({ product }) => {
     setWishlisted(w => !w);
   }, []);
 
+  const productImageSrc = product.images && product.images.length > 0 && product.images[0].image
+    ? getMediaUrl(product.images[0].image)
+    : (product.image ? getMediaUrl(product.image) : "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=600&q=80");
+
   return (
     <motion.div
       onHoverStart={() => setIsHovered(true)}
@@ -56,11 +62,7 @@ export const ProductCard = memo(({ product }) => {
       {/* Image */}
       <Link to={`/product/${product.id}`} className="relative block aspect-[4/3] overflow-hidden bg-slate-50 img-zoom-container">
         <img
-          src={
-            product.images && product.images.length > 0
-              ? product.images[0].image
-              : "https://placehold.co/400x300/f8fafc/94a3b8?text=No+Image"
-          }
+          src={productImageSrc}
           alt={product.name}
           loading="lazy"
           className="w-full h-full object-cover transition-transform duration-600"
