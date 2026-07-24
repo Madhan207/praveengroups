@@ -7,19 +7,19 @@ from rest_framework.views import APIView
 from django.db.models import Q
 
 class BusinessViewSet(viewsets.ModelViewSet):
-    queryset = Business.objects.all()
     serializer_class = BusinessSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     lookup_field = 'slug'
 
-    def list(self, request, *args, **kwargs):
+    def get_queryset(self):
         if not Business.objects.exists():
             try:
                 import seed_multi_business
                 seed_multi_business.run()
             except Exception as e:
                 print("Auto-seed error:", e)
-        return super().list(request, *args, **kwargs)
+        return Business.objects.all()
+
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
